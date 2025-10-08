@@ -1,0 +1,232 @@
+# authors:
+# David Hernandez Lopez, david.hernandez@uclm.es
+
+from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox
+from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime
+
+import os
+import sys
+import math
+import random
+import re
+import json
+import xmltodict
+import numpy as np
+from datetime import datetime
+
+from osgeo import gdal, osr, ogr
+gdal.UseExceptions()
+
+current_path = os.path.dirname(__file__)
+sys.path.append(os.path.join(current_path, '..'))
+sys.path.append(os.path.join(current_path, '../..'))
+# sys.path.insert(0, '..')
+# sys.path.insert(0, '../..')
+
+from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
+from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
+
+from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
+from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
+
+common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
+sys.path.append(common_libs_absolute_path)
+
+from pyLibCRSs import CRSsDefines as defs_crs
+from pyLibCRSs.CRSsTools import CRSsTools
+from pyLibQtTools import Tools
+# from pyLibGDAL import defs_gdal
+# from pyLibGDAL.GDALTools import GDALTools
+# from pyLibGDAL.RasterDEM import RasterDEM
+
+class Project:
+    def __init__(self,
+                 qgis_iface,
+                 settings,
+                 app_path):
+        self.qgis_iface = qgis_iface
+        self.settings = settings
+        self.file_path = None
+        self.app_path = app_path
+        self.project_definition = {}
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_NAME] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_TAG] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_AUTHOR] = None
+        # self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_GEO3D_CRS] = None
+        # self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_GEO2D_CRS] = None
+        # self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_ECEF_CRS] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS] = defs_project.CRS_PROJECTED_DEFAULT
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS] = defs_project.CRS_VERTICAL_DEFAULT
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_DESCRIPTION] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_START_DATE] = None
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_FINISH_DATE] = None
+        self.crs_id = ''
+        self.crs_tools = None
+        self.geometric_design_projects = {}
+        # self.gpkg_tools = None
+        self.initialize()
+
+    def geometric_design_projects_gui(self):
+        str_error = ''
+        title = defs_gdp.DIALOG_TITLE
+        dialog = GeometricDesignProjectsDialog(self, title)
+        dialog_result = dialog.exec()
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error
+        # definition_is_saved = dialog.is_saved
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error, definition_is_saved
+        # return str_error, definition_is_saved
+        return str_error
+
+
+        return str_error
+
+    def initialize(self):
+        self.crs_tools = CRSsTools()
+        epsg_crs_prefix = defs_crs.EPSG_TAG + ':'
+        crs_2d_id = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS]
+        crs_2d_epsg_code = int(crs_2d_id.replace(epsg_crs_prefix, ''))
+        self.crs_id = epsg_crs_prefix + str(crs_2d_epsg_code)
+        crs_vertical_id = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS]
+        if crs_vertical_id != defs_crs.VERTICAL_ELLIPSOID_TAG:
+            crs_vertical_epsg_code = int(crs_vertical_id.replace(epsg_crs_prefix, ''))
+            self.crs_id += ('+' + str(crs_vertical_epsg_code))
+        # self.gpkg_tools = GpkgTools(self.crs_tools)
+        if self.qgis_iface:
+            self.qgis_iface.set_project(self)
+        return
+
+    def project_definition_gui(self,
+                               is_process_creation):
+        str_error = ""
+        title = defs_project.PROJECT_DEFINITION_DIALOG_TITLE
+        dialog = ProjectDefinitionDialog(self, title, is_process_creation)
+        dialog_result = dialog.exec()
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error
+        definition_is_saved = dialog.is_saved
+        if dialog_result != QDialog.Accepted:
+            return str_error, definition_is_saved
+        return str_error, definition_is_saved
+        return str_error
+
+    def save_to_json(self):
+        str_error = ''
+        # if not os.path.exists(self.file_name):
+        if not self.file_path:
+            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = ("Project has not json file")
+            return str_error
+        as_dict = {}
+        # str_aux_error, definition_as_dict = self.definition_old.get_as_dict()
+        # if str_aux_error:
+        #     str_error = Project.__name__ + "." + self.save_to_json.__name__
+        #     str_error += ('\nSaving project to json file, error:\n{}'.format(str_aux_error))
+        #     return str_error
+        # as_dict[gd.PROJECT_DEFINITIONS_TAG] = definition_as_dict
+        as_dict[defs_project.PROJECT_DEFINITIONS_TAG] = self.project_definition
+
+        json_object = json.dumps(as_dict, indent=4, ensure_ascii=False)
+        # Writing to sample.json
+        with open(self.file_path, "w") as outfile:
+            outfile.write(json_object)
+        if self.qgis_iface:
+            self.qgis_iface.open_project(self)
+        return str_error
+
+    def set_definition_from_json(self, json_content):
+        str_error = ''
+        if not defs_project.PROJECT_DEFINITIONS_TAG_NAME in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_NAME,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_TAG in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_TAG,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_AUTHOR in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_AUTHOR,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_START_DATE in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_START_DATE,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        if not defs_project.PROJECT_DEFINITIONS_TAG_FINISH_DATE in json_content:
+            str_error = ("No {} in json content {}".format(defs_project.PROJECT_DEFINITIONS_TAG_FINISH_DATE,
+                                                           defs_project.PROJECT_DEFINITIONS_TAG))
+            return str_error
+        name = json_content[defs_project.PROJECT_DEFINITIONS_TAG_NAME]
+        tag = json_content[defs_project.PROJECT_DEFINITIONS_TAG_TAG]
+        author = json_content[defs_project.PROJECT_DEFINITIONS_TAG_AUTHOR]
+        crs_projected_id = json_content[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS]
+        crs_vertical_id = json_content[defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS]
+        output_path = json_content[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH]
+        description = json_content[defs_project.PROJECT_DEFINITIONS_TAG_DESCRIPTION]
+        start_date = json_content[defs_project.PROJECT_DEFINITIONS_TAG_START_DATE]
+        if start_date:
+            date_start_date = QDate.fromString(start_date, defs_main.QDATE_TO_STRING_FORMAT)
+            if not date_start_date.isValid():
+                str_error = ("Invalid date: {} for format: {}".format(start_date, defs_main.QDATE_TO_STRING_FORMAT))
+                return str_error
+        finish_date = json_content[defs_project.PROJECT_DEFINITIONS_TAG_FINISH_DATE]
+        if finish_date:
+            date_finish_date = QDate.fromString(finish_date, defs_main.QDATE_TO_STRING_FORMAT)
+            if not date_finish_date.isValid():
+                str_error = ("Invalid date: {} for format: {}".format(finish_date, defs_main.QDATE_TO_STRING_FORMAT))
+                return str_error
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_NAME] = name
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_TAG] = tag
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_AUTHOR] = author
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS] = crs_projected_id
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS] = crs_vertical_id
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH] = output_path
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_DESCRIPTION] = description
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_START_DATE] = start_date
+        self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_FINISH_DATE] = finish_date
+        epsg_crs_prefix = defs_crs.EPSG_TAG + ':'
+        crs_2d_id = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS]
+        crs_2d_epsg_code = int(crs_2d_id.replace(epsg_crs_prefix, ''))
+        self.crs_id = epsg_crs_prefix + str(crs_2d_epsg_code)
+        crs_vertical_id = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_VERTICAL_CRS]
+        if crs_vertical_id != defs_crs.VERTICAL_ELLIPSOID_TAG:
+            crs_vertical_epsg_code = int(crs_vertical_id.replace(epsg_crs_prefix, ''))
+            self.crs_id += ('+' + str(crs_vertical_epsg_code))
+
+        return
+
+    def set_from_json(self, file_name):
+        str_error = ''
+        if not os.path.exists(file_name):
+            str_error = Project.__name__ + "." + self.set_from_json.__name__
+            str_error += ("Not exists json project file:\n{}".format(file_name))
+            return str_error
+        with open(file_name, 'r') as file:
+            project_from_json = json.load(file)
+        if not defs_project.PROJECT_DEFINITIONS_TAG in project_from_json:
+            str_error = Project.__name__ + "." + self.set_from_json.__name__
+            str_error += ("No {} in json project file:\n{}".format(defs_project.PROJECT_DEFINITIONS_TAG,
+                                                                  file_name))
+            return str_error
+        str_aux_error = self.set_definition_from_json(project_from_json[defs_project.PROJECT_DEFINITIONS_TAG])
+        if str_aux_error:
+            str_error = Project.__name__ + "." + self.set_from_json.__name__
+            str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
+            return str_error
+        self.file_path = file_name
+        return str_error
+

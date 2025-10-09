@@ -147,9 +147,30 @@
    <item row="2" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="RemovePushButton">
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Remove selected items</string>
+        <string>Operation on the selected items:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="removePushButton">
+       <property name="text">
+        <string>Remove</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="enablePushButton">
+       <property name="text">
+        <string>Enable</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="disablePushButton">
+       <property name="text">
+        <string>Disable</string>
        </property>
       </widget>
      </item>

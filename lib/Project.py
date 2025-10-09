@@ -127,7 +127,7 @@ class Project:
         #     return str_error
         # as_dict[gd.PROJECT_DEFINITIONS_TAG] = definition_as_dict
         as_dict[defs_project.PROJECT_DEFINITIONS_TAG] = self.project_definition
-
+        as_dict[defs_project.PROJECT_GEOMETRIC_DESIGNS_TAG] = self.geometric_design_projects
         json_object = json.dumps(as_dict, indent=4, ensure_ascii=False)
         # Writing to sample.json
         with open(self.file_path, "w") as outfile:

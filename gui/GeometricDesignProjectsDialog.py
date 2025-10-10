@@ -6,6 +6,8 @@ import sys
 import math
 import pathlib
 
+import subprocess
+
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialog,
@@ -30,6 +32,8 @@ from pyLibQtTools import Tools
 from pyLibQtTools.Tools import SimpleTextEditDialog, SimpleJSONDialog
 from pyLibLandXml.LandXml import LandXml
 
+from pyLibQtTools.QProcessDialog import QProcessDialog
+from pyLibQtTools import defs_qprocess
 
 class GeometricDesignProjectsDialog(QDialog):
     """Employee dialog."""
@@ -198,6 +202,8 @@ class GeometricDesignProjectsDialog(QDialog):
             header_tooltip = headers_tooltips[i]
             header_item.setToolTip(header_tooltip)
             self.tableWidget.setHorizontalHeaderItem(i, header_item)
+        self.tableWidget.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents)
         self.update_gui()
         return
 
@@ -220,10 +226,12 @@ class GeometricDesignProjectsDialog(QDialog):
                 self.geometric_design_projects[id][defs_gdp.FIELD_DESCRIPTION] = text
             return
         elif label == defs_gdp.HEADER_CONTENT_TAG:
-            text = self.geometric_design_projects[id][defs_gdp.FIELD_CONTENT]
-            readOnly = True
-            dialog = SimpleJSONDialog(title, text, readOnly)
-            ret = dialog.exec()
+            return
+            # text = self.geometric_design_projects[id][defs_gdp.FIELD_CONTENT]
+            # readOnly = True
+            # dialog =  SimpleTextEditDialog(title, text, readOnly)
+            # # dialog = SimpleJSONDialog(title, text, readOnly)
+            # ret = dialog.exec()
         elif label == defs_gdp.HEADER_AXIS3D_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_AXIS3D]
             readOnly = True
@@ -337,9 +345,9 @@ class GeometricDesignProjectsDialog(QDialog):
             column_pos = 0
             self.tableWidget.setItem(rowPosition, column_pos, id_item)
             # enabled
-            str_enabled = True
+            str_enabled = 'True'
             if self.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] == 0:
-                str_enabled = False
+                str_enabled = 'False'
             enabled_item = QTableWidgetItem(str_enabled)
             enabled_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
@@ -391,4 +399,5 @@ class GeometricDesignProjectsDialog(QDialog):
             source_file_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
             self.tableWidget.setItem(rowPosition, column_pos, source_file_item)
+        self.tableWidget.resizeColumnsToContents()
         return

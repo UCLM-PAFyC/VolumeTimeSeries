@@ -5,6 +5,7 @@ import os
 import sys
 import math
 import pathlib
+import json
 
 import subprocess
 
@@ -30,7 +31,7 @@ sys.path.append(common_libs_absolute_path)
 from pyLibCRSs.CompoundProjectedCRSDialog import CompoundProjectedCRSDialog
 from pyLibQtTools import Tools
 from pyLibQtTools.Tools import SimpleTextEditDialog, SimpleJSONDialog
-from pyLibLandXml.LandXml import LandXml
+# from pyLibLandXml.LandXml import LandXml
 
 from pyLibQtTools.QProcessDialog import QProcessDialog
 from pyLibQtTools import defs_qprocess
@@ -53,48 +54,48 @@ class GeometricDesignProjectsDialog(QDialog):
         self.geometric_design_projects = None
         self.initialize()
 
-    def create_geometric_design_project_from_landxml(self,
-                                                     id,
-                                                     crs_id,
-                                                     file_path):
-        str_error = ''
-        geometric_design_project = {}
-        landXml = LandXml()
-        str_error = landXml.set_from_file(file_path)
-        if str_error:
-            return str_error, None
-        points_distance = defs_gdp.AXIS_POINTS_DISTANCE
-        str_error = landXml.set_axis_points(points_distance)
-        if str_error:
-            return str_error, None
-        str_error, wkt_linestring, wkt_profile_linestring = landXml.get_axis_points_as_wktlinestring()
-        if str_error:
-            return str_error, None
-        grading_axis = False # must be False, option use grading axis for triangulation of LandXml is not implemented yet
-        cross_sections = True
-        # ply_file_path = None
-        ply_file_path = landXml.file_path
-        ply_file_path = ply_file_path.lower()
-        ply_file_path = ply_file_path.replace(".xml", ".ply")
-        ply_file_path = os.path.normpath(ply_file_path)
-        str_error = landXml.compute_triangulation(grading_axis,
-                                                  cross_sections,
-                                                  ply_file_path)
-        if str_error:
-            return str_error, None
-        geometric_design_project = {}
-        geometric_design_project[defs_gdp.FIELD_ID] = id
-        geometric_design_project[defs_gdp.FIELD_ENABLED] = 1
-        geometric_design_project[defs_gdp.FIELD_DESCRIPTION] = ""
-        geometric_design_project[defs_gdp.FIELD_CRS] = crs_id
-        geometric_design_project[defs_gdp.FIELD_CONTENT] = landXml.as_dict
-        geometric_design_project[defs_gdp.FIELD_AXIS3D] = wkt_linestring
-        geometric_design_project[defs_gdp.FIELD_PROFILE] = wkt_profile_linestring
-        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_PLY] = landXml.triangulation_ply_content
-        geometric_design_project[defs_gdp.FIELD_SOURCE_FILE] = file_path
-        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_POINTS] = landXml.triangulation_points
-        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_TRIANGLES] = landXml.triangulation_triangles
-        return str_error, geometric_design_project
+    # def create_geometric_design_project_from_landxml(self,
+    #                                                  id,
+    #                                                  crs_id,
+    #                                                  file_path):
+    #     str_error = ''
+    #     geometric_design_project = {}
+    #     landXml = LandXml()
+    #     str_error = landXml.set_from_file(file_path)
+    #     if str_error:
+    #         return str_error, None
+    #     points_distance = defs_gdp.AXIS_POINTS_DISTANCE
+    #     str_error = landXml.set_axis_points(points_distance)
+    #     if str_error:
+    #         return str_error, None
+    #     str_error, wkt_linestring, wkt_profile_linestring = landXml.get_axis_points_as_wktlinestring()
+    #     if str_error:
+    #         return str_error, None
+    #     grading_axis = False # must be False, option use grading axis for triangulation of LandXml is not implemented yet
+    #     cross_sections = True
+    #     # ply_file_path = None
+    #     ply_file_path = landXml.file_path
+    #     ply_file_path = ply_file_path.lower()
+    #     ply_file_path = ply_file_path.replace(".xml", ".ply")
+    #     ply_file_path = os.path.normpath(ply_file_path)
+    #     str_error = landXml.compute_triangulation(grading_axis,
+    #                                               cross_sections,
+    #                                               ply_file_path)
+    #     if str_error:
+    #         return str_error, None
+    #     geometric_design_project = {}
+    #     geometric_design_project[defs_gdp.FIELD_ID] = id
+    #     geometric_design_project[defs_gdp.FIELD_ENABLED] = 1
+    #     geometric_design_project[defs_gdp.FIELD_DESCRIPTION] = ""
+    #     geometric_design_project[defs_gdp.FIELD_CRS] = crs_id
+    #     geometric_design_project[defs_gdp.FIELD_CONTENT] = landXml.as_dict
+    #     geometric_design_project[defs_gdp.FIELD_AXIS3D] = wkt_linestring
+    #     geometric_design_project[defs_gdp.FIELD_PROFILE] = wkt_profile_linestring
+    #     geometric_design_project[defs_gdp.FIELD_TRIANGULATION_PLY] = landXml.triangulation_ply_content
+    #     geometric_design_project[defs_gdp.FIELD_SOURCE_FILE] = file_path
+    #     geometric_design_project[defs_gdp.FIELD_TRIANGULATION_POINTS] = landXml.triangulation_points
+    #     geometric_design_project[defs_gdp.FIELD_TRIANGULATION_TRIANGLES] = landXml.triangulation_triangles
+    #     return str_error, geometric_design_project
 
     def disable(self):
         if len(self.geometric_design_projects) == 0:
@@ -142,6 +143,10 @@ class GeometricDesignProjectsDialog(QDialog):
             str_msg = ("Select id before")
             Tools.error_msg(str_msg)
             return
+        if id in self.geometric_design_projects:
+            str_msg = ("Exists another geometric design project with id: {}\nSelect a new id".format(id))
+            Tools.error_msg(str_msg)
+            return
         crs_id = self.crsLineEdit.text()
         if not crs_id:
             str_msg = ("Select CRS before")
@@ -154,9 +159,9 @@ class GeometricDesignProjectsDialog(QDialog):
         str_error = ''
         geometric_design_project = None
         if format == defs_gdp.FORMAT_LANDXML:
-            str_error, geometric_design_project = self.create_geometric_design_project_from_landxml(id,
-                                                                                                    crs_id,
-                                                                                                    file_path)
+            str_error, geometric_design_project = self.project.create_geometric_design_project_from_landxml(id,
+                                                                                                            crs_id,
+                                                                                                            file_path)
         if str_error or geometric_design_project is None:
             str_error = ('Creating Geometric Design Project from file:\n{}\nError:\n{}'
                          .format(file_path, str_error))
@@ -226,12 +231,12 @@ class GeometricDesignProjectsDialog(QDialog):
                 self.geometric_design_projects[id][defs_gdp.FIELD_DESCRIPTION] = text
             return
         elif label == defs_gdp.HEADER_CONTENT_TAG:
-            return
-            # text = self.geometric_design_projects[id][defs_gdp.FIELD_CONTENT]
-            # readOnly = True
-            # dialog =  SimpleTextEditDialog(title, text, readOnly)
-            # # dialog = SimpleJSONDialog(title, text, readOnly)
-            # ret = dialog.exec()
+            # return
+            text = self.geometric_design_projects[id][defs_gdp.FIELD_CONTENT]
+            json_content = json.dumps(text)
+            readOnly = True
+            dialog = SimpleJSONDialog(title, json_content, readOnly)
+            ret = dialog.exec()
         elif label == defs_gdp.HEADER_AXIS3D_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_AXIS3D]
             readOnly = True

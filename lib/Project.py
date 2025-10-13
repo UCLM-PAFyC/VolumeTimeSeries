@@ -1,5 +1,6 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
+from codecs import strict_errors
 
 from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox
 from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime
@@ -38,6 +39,8 @@ from pyLibQtTools import Tools
 # from pyLibGDAL import defs_gdal
 # from pyLibGDAL.GDALTools import GDALTools
 # from pyLibGDAL.RasterDEM import RasterDEM
+from pyLibLandXml.LandXml import LandXml
+
 
 class Project:
     def __init__(self,
@@ -67,10 +70,53 @@ class Project:
         # self.gpkg_tools = None
         self.initialize()
 
-    def geometric_design_projects_gui(self):
+    def create_geometric_design_project_from_landxml(self,
+                                                     id,
+                                                     crs_id,
+                                                     file_path):
+        str_error = ''
+        geometric_design_project = {}
+        landXml = LandXml()
+        str_error = landXml.set_from_file(file_path)
+        if str_error:
+            return str_error, None
+        points_distance = defs_gdp.AXIS_POINTS_DISTANCE
+        str_error = landXml.set_axis_points(points_distance)
+        if str_error:
+            return str_error, None
+        str_error, wkt_linestring, wkt_profile_linestring = landXml.get_axis_points_as_wktlinestring()
+        if str_error:
+            return str_error, None
+        grading_axis = False # must be False, option use grading axis for triangulation of LandXml is not implemented yet
+        cross_sections = True
+        # ply_file_path = None
+        ply_file_path = landXml.file_path
+        ply_file_path = ply_file_path.lower()
+        ply_file_path = ply_file_path.replace(".xml", ".ply")
+        ply_file_path = os.path.normpath(ply_file_path)
+        str_error = landXml.compute_triangulation(grading_axis,
+                                                  cross_sections,
+                                                  ply_file_path)
+        if str_error:
+            return str_error, None
+        geometric_design_project = {}
+        geometric_design_project[defs_gdp.FIELD_ID] = id
+        geometric_design_project[defs_gdp.FIELD_ENABLED] = 1
+        geometric_design_project[defs_gdp.FIELD_DESCRIPTION] = ""
+        geometric_design_project[defs_gdp.FIELD_CRS] = crs_id
+        geometric_design_project[defs_gdp.FIELD_CONTENT] = landXml.as_dict
+        geometric_design_project[defs_gdp.FIELD_AXIS3D] = wkt_linestring
+        geometric_design_project[defs_gdp.FIELD_PROFILE] = wkt_profile_linestring
+        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_PLY] = landXml.triangulation_ply_content
+        geometric_design_project[defs_gdp.FIELD_SOURCE_FILE] = file_path
+        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_POINTS] = landXml.triangulation_points
+        geometric_design_project[defs_gdp.FIELD_TRIANGULATION_TRIANGLES] = landXml.triangulation_triangles
+        return str_error, geometric_design_project
+
+    def geometric_design_projects_gui(self, parent_widget):
         str_error = ''
         title = defs_gdp.DIALOG_TITLE
-        dialog = GeometricDesignProjectsDialog(self, title)
+        dialog = GeometricDesignProjectsDialog(self, title, parent_widget)
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:
         #     return str_error
@@ -78,9 +124,6 @@ class Project:
         # if dialog_result != QDialog.Accepted:
         #     return str_error, definition_is_saved
         # return str_error, definition_is_saved
-        return str_error
-
-
         return str_error
 
     def initialize(self):
@@ -209,6 +252,21 @@ class Project:
 
         return
 
+    def set_geometric_design_projects_from_json(self,
+                                                json_content):
+        str_error = ""
+        geometric_design_projects = {}
+        for id in json_content:
+            gdp_json_content = json_content[id]
+            for field_name in defs_gdp.fields:
+                if not field_name in gdp_json_content:
+                    str_error = ('For geomatric design project id: {}'.format(id))
+                    str_error += ("\nNo {} in json content".format(field_name))
+                    return str_error
+            geometric_design_projects[id] = gdp_json_content
+        self.geometric_design_projects = geometric_design_projects
+        return str_error
+
     def set_from_json(self, file_name):
         str_error = ''
         if not os.path.exists(file_name):
@@ -227,6 +285,13 @@ class Project:
             str_error = Project.__name__ + "." + self.set_from_json.__name__
             str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
             return str_error
+        if defs_project.PROJECT_GEOMETRIC_DESIGNS_TAG in project_from_json:
+            str_aux_error = self.set_geometric_design_projects_from_json(
+                project_from_json[defs_project.PROJECT_GEOMETRIC_DESIGNS_TAG])
+            if str_aux_error:
+                str_error = Project.__name__ + "." + self.set_from_json.__name__
+                str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
+                return str_error
         self.file_path = file_name
         return str_error
 

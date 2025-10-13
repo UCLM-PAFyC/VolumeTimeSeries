@@ -67,7 +67,7 @@ class VolumeTimeSeriesDialog(QDialog):
             str_error = ('Not exists project')
             Tools.error_msg(str_error)
             return
-        str_error = self.project.geometric_design_projects_gui()
+        str_error = self.project.geometric_design_projects_gui(self)
         if str_error:
             str_error = ('Geometric design project, error:\n{}'.format(str_error))
             Tools.error_msg(str_error)

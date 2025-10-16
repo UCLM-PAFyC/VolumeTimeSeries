@@ -48,7 +48,7 @@ libPath = os.path.join(pluginPath, 'lib')
 # existsPluginPath = QDir(libPath).exists()
 sys.path.append(pluginPath)
 sys.path.append(libPath)
-current_path = os.path.dirname(__file__)
+current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
 

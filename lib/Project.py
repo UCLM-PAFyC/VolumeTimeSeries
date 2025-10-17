@@ -68,6 +68,7 @@ class Project:
         self.crs_id = ''
         self.crs_tools = None
         self.geometric_design_projects = {}
+        self.photogrammetry_projects = {}
         # self.gpkg_tools = None
         self.initialize()
 
@@ -142,10 +143,10 @@ class Project:
             self.qgis_iface.set_project(self)
         return
 
-    def photogrammetry_projects_gui(self):
+    def photogrammetry_projects_gui(self, parent_widget):
         str_error = ''
         title = defs_phoprjs.PHOTOGRAMMETRY_PROJECTS_DIALOG_TITLE
-        dialog = PhotogrammetryProjectsDialog(self, title)
+        dialog = PhotogrammetryProjectsDialog(self, title, parent_widget)
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:
         #     return str_error

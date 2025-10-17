@@ -107,7 +107,7 @@ class VolumeTimeSeriesDialog(QDialog):
             str_error = ('Not exists project')
             Tools.error_msg(str_error)
             return False
-        str_error, is_saved = self.project.photogrammetry_projects_gui()
+        str_error, is_saved = self.project.photogrammetry_projects_gui(self)
         if str_error:
             str_error = ('Photogrammetry Projects, error:\n{}'.format(str_error))
             Tools.error_msg(str_error)

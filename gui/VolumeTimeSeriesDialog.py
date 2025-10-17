@@ -83,6 +83,7 @@ class VolumeTimeSeriesDialog(QDialog):
             self.settings.sync()
         self.projectFilePushButton.clicked.connect(self.select_project_file)
         self.projectDefinitionPushButton.clicked.connect(self.project_definition)
+        self.photogrammetryProjectsPushButton.clicked.connect(self.photogrammetry_projects)
         self.geometricDesignProjectsPushButton.clicked.connect(self.geometric_design_projects)
         self.saveProjectPushButton.clicked.connect(self.save_project)
         self.tabWidget.setEnabled(False)
@@ -100,6 +101,18 @@ class VolumeTimeSeriesDialog(QDialog):
                                self.app_path)
         str_error = self.project.set_from_json(file_name)
         return str_error
+
+    def photogrammetry_projects(self):
+        if not self.project:
+            str_error = ('Not exists project')
+            Tools.error_msg(str_error)
+            return False
+        str_error, is_saved = self.project.photogrammetry_projects_gui()
+        if str_error:
+            str_error = ('Photogrammetry Projects, error:\n{}'.format(str_error))
+            Tools.error_msg(str_error)
+            return False
+        return
 
     def project_definition(self,
                            is_process_creation = False):

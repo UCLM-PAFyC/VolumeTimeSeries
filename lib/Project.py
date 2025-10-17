@@ -40,7 +40,8 @@ from pyLibQtTools import Tools
 # from pyLibGDAL.GDALTools import GDALTools
 # from pyLibGDAL.RasterDEM import RasterDEM
 from pyLibLandXml.LandXml import LandXml
-
+from pyLibPhotogrammetry.defs import defs_photogrammetry_projects as defs_phoprjs
+from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
 
 class Project:
     def __init__(self,
@@ -141,6 +142,20 @@ class Project:
             self.qgis_iface.set_project(self)
         return
 
+    def photogrammetry_projects_gui(self):
+        str_error = ''
+        title = defs_phoprjs.PHOTOGRAMMETRY_PROJECTS_DIALOG_TITLE
+        dialog = PhotogrammetryProjectsDialog(self, title)
+        dialog_result = dialog.exec()
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error
+        is_saved = dialog.is_saved
+        if dialog_result != QDialog.Accepted:
+            return str_error, is_saved
+        return str_error, is_saved
+
+        return str_error
+
     def project_definition_gui(self,
                                is_process_creation):
         str_error = ""
@@ -153,7 +168,6 @@ class Project:
         if dialog_result != QDialog.Accepted:
             return str_error, definition_is_saved
         return str_error, definition_is_saved
-        return str_error
 
     def save_to_json(self):
         str_error = ''

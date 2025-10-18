@@ -100,27 +100,27 @@ class GeometricDesignProjectsDialog(QDialog):
     def disable(self):
         if len(self.geometric_design_projects) == 0:
             return
-        for i in range(self.table_widget.rowCount()):
-            id_item = self.table_widget.item(i, 0)
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
             if id_item.isSelected():
                 id = id_item.text()
-                if self.project.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] == 1:
-                    enabled_item = self.table_widget.item(i, 1)
+                if self.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] == 1:
+                    enabled_item = self.tableWidget.item(i, 1)
                     enabled_item.setText("False")
-                    self.project.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] = 0
+                    self.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] = 0
         return
 
     def enable(self):
         if len(self.geometric_design_projects) == 0:
             return
-        for i in range(self.table_widget.rowCount()):
-            id_item = self.table_widget.item(i, 0)
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
             if id_item.isSelected():
                 id = id_item.text()
-                if self.project.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] == 0:
-                    enabled_item = self.table_widget.item(i, 1)
+                if self.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] == 0:
+                    enabled_item = self.tableWidget.item(i, 1)
                     enabled_item.setText("True")
-                    self.project.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] = 1
+                    self.geometric_design_projects[id][defs_gdp.FIELD_ENABLED] = 1
         return
 
     def import_file(self):
@@ -258,8 +258,8 @@ class GeometricDesignProjectsDialog(QDialog):
         if len(self.geometric_design_projects) == 0:
             return
         ids_to_remove = []
-        for i in range(self.table_widget.rowCount()):
-            id_item = self.table_widget.item(i, 0)
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
             if id_item.isSelected():
                 ids_to_remove.append(id_item.text())
         if len(ids_to_remove) < 1:
@@ -267,13 +267,13 @@ class GeometricDesignProjectsDialog(QDialog):
             Tools.error_msg(str_error)
             return
         for i in range(len(ids_to_remove)):
-            for j in range(self.table_widget.rowCount()):
-                id_item = self.table_widget.item(j, 0)
+            for j in range(self.tableWidget.rowCount()):
+                id_item = self.tableWidget.item(j, 0)
                 if id_item.text() == ids_to_remove[i]:
-                    self.table_widget.removeRow(id_item.row())
+                    self.tableWidget.removeRow(id_item.row())
                     break
         for id in ids_to_remove:
-            self.project.geometric_design_projects.pop(id)
+            self.geometric_design_projects.pop(id)
         return
 
     def save(self):

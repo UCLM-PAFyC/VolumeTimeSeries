@@ -186,6 +186,7 @@ class Project:
         # as_dict[gd.PROJECT_DEFINITIONS_TAG] = definition_as_dict
         as_dict[defs_project.PROJECT_DEFINITIONS_TAG] = self.project_definition
         as_dict[defs_project.PROJECT_GEOMETRIC_DESIGNS_TAG] = self.geometric_design_projects
+        as_dict[defs_project.PROJECT_PHOTOGRAMMETRY_PROJECTS_TAG] = self.photogrammetry_projects
         json_object = json.dumps(as_dict, indent=4, ensure_ascii=False)
         # Writing to sample.json
         with open(self.file_path, "w") as outfile:
@@ -264,7 +265,6 @@ class Project:
         if crs_vertical_id != defs_crs.VERTICAL_ELLIPSOID_TAG:
             crs_vertical_epsg_code = int(crs_vertical_id.replace(epsg_crs_prefix, ''))
             self.crs_id += ('+' + str(crs_vertical_epsg_code))
-
         return
 
     def set_geometric_design_projects_from_json(self,
@@ -307,6 +307,28 @@ class Project:
                 str_error = Project.__name__ + "." + self.set_from_json.__name__
                 str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
                 return str_error
+        if defs_project.PROJECT_PHOTOGRAMMETRY_PROJECTS_TAG in project_from_json:
+            str_aux_error = self.set_photogrammetry_projects_from_json(
+                project_from_json[defs_project.PROJECT_PHOTOGRAMMETRY_PROJECTS_TAG])
+            if str_aux_error:
+                str_error = Project.__name__ + "." + self.set_from_json.__name__
+                str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
+                return str_error
         self.file_path = file_name
+        return str_error
+
+    def set_photogrammetry_projects_from_json(self,
+                                              json_content):
+        str_error = ""
+        photogrammetry_projects = {}
+        for id in json_content:
+            phprj_json_content = json_content[id]
+            for field_name in defs_phoprjs.fields:
+                if not field_name in phprj_json_content:
+                    str_error = ('For photogrammetry project id: {}'.format(id))
+                    str_error += ("\nNo {} in json content".format(field_name))
+                    return str_error
+            photogrammetry_projects[id] = phprj_json_content
+        self.photogrammetry_projects = photogrammetry_projects
         return str_error
 

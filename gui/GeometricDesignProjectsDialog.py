@@ -280,7 +280,7 @@ class GeometricDesignProjectsDialog(QDialog):
         self.project.geometric_design_projects = dict(self.geometric_design_projects)
         str_aux_error = self.project.save_to_json()
         if str_aux_error:
-            str_error = ('Error saving project definition:\n{}'.
+            str_error = ('Error saving project:\n{}'.
                          format(str_aux_error))
             Tools.error_msg(str_error)
         else:
@@ -308,7 +308,7 @@ class GeometricDesignProjectsDialog(QDialog):
         previous_file_name = os.path.normpath(previous_file_name)
         dlg = QFileDialog()
         dlg.setDirectory(self.last_path)
-        dlg.setFileMode(QFileDialog.AnyFile)
+        dlg.setFileMode(QFileDialog.ExistingFile)
         str_content = ('Geometric Design File (*.{})'.format(defs_gdp.extension_by_format[selected_format]))
         dlg.setNameFilter(str_content)
         if dlg.exec_():

@@ -40,7 +40,7 @@ from pyLibQtTools import Tools
 # from pyLibGDAL.GDALTools import GDALTools
 # from pyLibGDAL.RasterDEM import RasterDEM
 from pyLibLandXml.LandXml import LandXml
-from pyLibPhotogrammetry.defs import defs_photogrammetry_projects as defs_phoprjs
+from pyLibPhotogrammetry.defs import defs_projects_dlg as defs_ph_prjs_dlg
 from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
 
 class Project:
@@ -145,7 +145,7 @@ class Project:
 
     def photogrammetry_projects_gui(self, parent_widget):
         str_error = ''
-        title = defs_phoprjs.PHOTOGRAMMETRY_PROJECTS_DIALOG_TITLE
+        title = defs_ph_prjs_dlg.PHOTOGRAMMETRY_PROJECTS_DIALOG_TITLE
         dialog = PhotogrammetryProjectsDialog(self, title, parent_widget)
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:
@@ -323,7 +323,7 @@ class Project:
         photogrammetry_projects = {}
         for id in json_content:
             phprj_json_content = json_content[id]
-            for field_name in defs_phoprjs.fields:
+            for field_name in defs_ph_prjs_dlg.fields:
                 if not field_name in phprj_json_content:
                     str_error = ('For photogrammetry project id: {}'.format(id))
                     str_error += ("\nNo {} in json content".format(field_name))

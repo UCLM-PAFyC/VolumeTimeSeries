@@ -60,8 +60,9 @@ from VolumeTimeSeries.QGisIFace import QGisIFace
 # # sys.path.append("C:\Program Files\JetBrains\PyCharm 2020.3\debug-eggs\pydevd-pycharm.egg") # dhl
 # sys.path.append("C:\Program Files\JetBrains\PyCharm 2023.2\debug-eggs\pydevd-pycharm.egg")  # dhl
 # sys.path.append("C:\Program Files\JetBrains\PyCharm 2023.2\debug-eggs\pydevd-pycharm.egg")  # dhl
-sys.path.append("C:\\Program Files\\JetBrains\\PyCharm 2025.2.0.1\\debug-eggs\\pydevd-pycharm.egg")  # dhl
-import pydevd
+# sys.path.append("C:\\Program Files\\JetBrains\\PyCharm 2025.2.0.1\\debug-eggs\\pydevd-pycharm.egg")  # dhl
+# import pydevd
+# import pydevd_pycharm
 
 
 class qVolumeTimeSeries(object):
@@ -69,6 +70,8 @@ class qVolumeTimeSeries(object):
     def __init__(self, iface):
 
         # pydevd.settrace('localhost',port=54100,stdoutToServer=True,stderrToServer=True)
+        # pydevd.settrace('localhost',port=54100,stdoutToServer=True,stderrToServer=True)
+        # pydevd_pycharm.settrace('localhost', port=54100)
 
         self.projVersionMajor = projVersionMajor
         self.path_plugin = pluginPath

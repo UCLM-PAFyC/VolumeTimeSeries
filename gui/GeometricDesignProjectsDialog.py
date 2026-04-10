@@ -156,12 +156,19 @@ class GeometricDesignProjectsDialog(QDialog):
             str_msg = ("Format: {} is not implemented\nContact the author").format(format)
             Tools.error_msg(str_msg)
             return
+        roi_width_as_text = self.roiWidthLineEdit.text()
+        if not roi_width_as_text:
+            str_msg = ("Select ROI Width before")
+            Tools.error_msg(str_msg)
+            return
+        roi_width = float(roi_width_as_text)
         str_error = ''
         geometric_design_project = None
         if format == defs_gdp.FORMAT_LANDXML:
             str_error, geometric_design_project = self.project.create_geometric_design_project_from_landxml(id,
                                                                                                             crs_id,
-                                                                                                            file_path)
+                                                                                                            file_path,
+                                                                                                            roi_width)
         if str_error or geometric_design_project is None:
             str_error = ('Creating Geometric Design Project from file:\n{}\nError:\n{}'
                          .format(file_path, str_error))
@@ -191,6 +198,9 @@ class GeometricDesignProjectsDialog(QDialog):
         self.selectFilePushButton.clicked.connect(self.select_file)
         self.idPushButton.clicked.connect(self.select_id)
         self.crsPushButton.clicked.connect(self.select_crs)
+        self.roiWidthPushButton.clicked.connect(self.select_roi_width)
+        roi_width_default_value_as_text = "{:.2f}".format(defs_gdp.ROI_WIDTH_DEFAULT_VALUE)
+        self.roiWidthLineEdit.setText(roi_width_default_value_as_text)
         self.importPushButton.clicked.connect(self.import_file)
         self.savePushButton.clicked.connect(self.save)
         self.tableWidget.itemDoubleClicked.connect(self.on_click)
@@ -249,6 +259,11 @@ class GeometricDesignProjectsDialog(QDialog):
             ret = dialog.exec()
         elif label == defs_gdp.HEADER_TRIANGULATION_PLY_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
+            readOnly = True
+            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            ret = dialog.exec()
+        elif label == defs_gdp.HEADER_ROI_TAG:
+            text = self.geometric_design_projects[id][defs_gdp.FIELD_ROI]
             readOnly = True
             dialog =  SimpleTextEditDialog(title, text, readOnly)
             ret = dialog.exec()
@@ -339,6 +354,27 @@ class GeometricDesignProjectsDialog(QDialog):
             self.idLineEdit.setText(text)
         return
 
+    def select_roi_width(self):
+        current_text = self.roiWidthLineEdit.text()
+        title = "Region Of Interest Width (m)"
+        text, ok = QInputDialog().getText(self, title, '', QLineEdit.Normal, current_text)
+        if ok and text:
+            min_value = defs_gdp.ROI_WIDTH_MINIMUM_VALUE
+            max_value = defs_gdp.ROI_WIDTH_MAXIMUM_VALUE
+            try:
+                value = float(text)
+            except ValueError:
+                str_error = "Value must be a real number"
+                Tools.error_msg(str_error)
+                return
+            if value < min_value or value > max_value:
+                str_error = ("Value is out of domain = [{} , {}]".format(str(min_value), str(max_value)))
+                Tools.error_msg(str_error)
+                return
+            value_as_text = "{:.2f}".format(value)
+            self.roiWidthLineEdit.setText(value_as_text)
+        return
+
     def update_gui(self):
         self.tableWidget.setRowCount(0)
         for id in self.geometric_design_projects:
@@ -398,6 +434,20 @@ class GeometricDesignProjectsDialog(QDialog):
             triangulation_ply_content_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
             self.tableWidget.setItem(rowPosition, column_pos, triangulation_ply_content_item)
+            # roi_width
+            # roi_width_content = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
+            roi_width_content = self.geometric_design_projects[id][defs_gdp.FIELD_ROI_WIDTH]
+            roi_width_content_item = QTableWidgetItem(roi_width_content)
+            roi_width_content_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, roi_width_content_item)
+            # roi
+            # roi_content = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
+            roi_content = defs_gdp.RESUME_CONTENT
+            roi_content_item = QTableWidgetItem(roi_content)
+            roi_content_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, roi_content_item)
             # source_file
             source_file = self.geometric_design_projects[id][defs_gdp.FIELD_SOURCE_FILE]
             source_file_item = QTableWidgetItem(source_file)

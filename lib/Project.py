@@ -18,6 +18,22 @@ from datetime import datetime
 from osgeo import gdal, osr, ogr
 gdal.UseExceptions()
 
+class GdalErrorHandler(object):
+    def __init__(self):
+        self.err_level = gdal.CE_None
+        self.err_no = 0
+        self.err_msg = ''
+
+    def handler(self, err_level, err_no, err_msg):
+        self.err_level = err_level
+        self.err_no = err_no
+        self.err_msg = err_msg
+
+err = GdalErrorHandler()
+gdal.PushErrorHandler(err.handler)
+gdal.UseExceptions()  # Exceptions will get raised on anything >= gdal.CE_Failure
+assert err.err_level == gdal.CE_None, 'the error level starts at 0'
+
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
 sys.path.append(os.path.join(current_path, '../..'))
@@ -40,7 +56,7 @@ from pyLibQtTools import Tools
 # from pyLibGDAL.GDALTools import GDALTools
 # from pyLibGDAL.RasterDEM import RasterDEM
 from pyLibLandXml.LandXml import LandXml
-from pyLibPhotogrammetry.defs import defs_projects_dlg as defs_ph_prjs_dlg
+from pyLibPhotogrammetry.defs import defs_projects_dialog as defs_ph_prjs_dlg
 from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
 
 class Project:
@@ -75,7 +91,8 @@ class Project:
     def create_geometric_design_project_from_landxml(self,
                                                      id,
                                                      crs_id,
-                                                     file_path):
+                                                     file_path,
+                                                     roi_width):
         str_error = ''
         geometric_design_project = {}
         landXml = LandXml()
@@ -88,6 +105,21 @@ class Project:
             return str_error, None
         str_error, wkt_linestring, wkt_profile_linestring = landXml.get_axis_points_as_wktlinestring()
         if str_error:
+            return str_error, None
+        try:
+            axis_geom = ogr.CreateGeometryFromWkt(wkt_linestring)
+        except Exception as e:
+            str_error = 'GDAL Error: ' + e.args[0]
+            return str_error, None
+        try:
+            roi_geom = axis_geom.Buffer(roi_width)
+        except Exception as e:
+            str_error = 'GDAL Error: ' + e.args[0]
+            return str_error, None
+        try:
+            wkt_roi = roi_geom.ExportToWkt()
+        except Exception as e:
+            str_error = 'GDAL Error: ' + e.args[0]
             return str_error, None
         grading_axis = False # must be False, option use grading axis for triangulation of LandXml is not implemented yet
         cross_sections = True
@@ -110,6 +142,8 @@ class Project:
         geometric_design_project[defs_gdp.FIELD_AXIS3D] = wkt_linestring
         geometric_design_project[defs_gdp.FIELD_PROFILE] = wkt_profile_linestring
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_PLY] = landXml.triangulation_ply_content
+        geometric_design_project[defs_gdp.FIELD_ROI_WIDTH] = roi_width
+        geometric_design_project[defs_gdp.FIELD_ROI] = wkt_roi
         geometric_design_project[defs_gdp.FIELD_SOURCE_FILE] = file_path
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_POINTS] = landXml.triangulation_points
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_TRIANGLES] = landXml.triangulation_triangles

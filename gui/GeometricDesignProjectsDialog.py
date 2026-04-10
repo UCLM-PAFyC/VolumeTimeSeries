@@ -162,13 +162,20 @@ class GeometricDesignProjectsDialog(QDialog):
             Tools.error_msg(str_msg)
             return
         roi_width = float(roi_width_as_text)
+        gsd_computation_as_text = self.gsdComputationLineEdit.text()
+        if not gsd_computation_as_text:
+            str_msg = ("Select GSD computation")
+            Tools.error_msg(str_msg)
+            return
+        gsd_computation = float(gsd_computation_as_text)
         str_error = ''
         geometric_design_project = None
         if format == defs_gdp.FORMAT_LANDXML:
             str_error, geometric_design_project = self.project.create_geometric_design_project_from_landxml(id,
                                                                                                             crs_id,
                                                                                                             file_path,
-                                                                                                            roi_width)
+                                                                                                            roi_width,
+                                                                                                            gsd_computation)
         if str_error or geometric_design_project is None:
             str_error = ('Creating Geometric Design Project from file:\n{}\nError:\n{}'
                          .format(file_path, str_error))
@@ -201,6 +208,9 @@ class GeometricDesignProjectsDialog(QDialog):
         self.roiWidthPushButton.clicked.connect(self.select_roi_width)
         roi_width_default_value_as_text = "{:.2f}".format(defs_gdp.ROI_WIDTH_DEFAULT_VALUE)
         self.roiWidthLineEdit.setText(roi_width_default_value_as_text)
+        self.gsdComputationPushButton.clicked.connect(self.select_gsd_computation)
+        gsd_computatioin_default_value_as_text = "{:.2f}".format(defs_gdp.GSD_COMPUTATION_DEFAULT_VALUE)
+        self.gsdComputationLineEdit.setText(gsd_computatioin_default_value_as_text)
         self.importPushButton.clicked.connect(self.import_file)
         self.savePushButton.clicked.connect(self.save)
         self.tableWidget.itemDoubleClicked.connect(self.on_click)
@@ -341,6 +351,27 @@ class GeometricDesignProjectsDialog(QDialog):
                 self.project.settings.sync()
         return
 
+    def select_gsd_computation(self):
+        current_text = self.gsdComputationLineEdit.text()
+        title = "GSD for volumes computation (m)"
+        text, ok = QInputDialog().getText(self, title, '', QLineEdit.Normal, current_text)
+        if ok and text:
+            min_value = defs_gdp.GSD_COMPUTATION_MINIMUM_VALUE
+            max_value = defs_gdp.GSD_COMPUTATION_MAXIMUM_VALUE
+            try:
+                value = float(text)
+            except ValueError:
+                str_error = "Value must be a real number"
+                Tools.error_msg(str_error)
+                return
+            if value < min_value or value > max_value:
+                str_error = ("Value is out of domain = [{} , {}]".format(str(min_value), str(max_value)))
+                Tools.error_msg(str_error)
+                return
+            value_as_text = "{:.2f}".format(value)
+            self.gsdComputationLineEdit.setText(value_as_text)
+        return
+
     def select_id(self):
         current_text = self.idLineEdit.text()
         text, okPressed = QInputDialog.getText(self, "Id", "Enter value (case sensitive):",
@@ -436,7 +467,7 @@ class GeometricDesignProjectsDialog(QDialog):
             self.tableWidget.setItem(rowPosition, column_pos, triangulation_ply_content_item)
             # roi_width
             # roi_width_content = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
-            roi_width_content = self.geometric_design_projects[id][defs_gdp.FIELD_ROI_WIDTH]
+            roi_width_content = "{:.2f}".format(self.geometric_design_projects[id][defs_gdp.FIELD_ROI_WIDTH])
             roi_width_content_item = QTableWidgetItem(roi_width_content)
             roi_width_content_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
@@ -448,6 +479,13 @@ class GeometricDesignProjectsDialog(QDialog):
             roi_content_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
             self.tableWidget.setItem(rowPosition, column_pos, roi_content_item)
+            # gsd_volumes_computation
+            # gsd_volumes_computation_content = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
+            gsd_volumes_computation_content = "{:.2f}".format(self.geometric_design_projects[id][defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION])
+            gsd_volumes_computation_content_item = QTableWidgetItem(gsd_volumes_computation_content)
+            gsd_volumes_computation_content_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, gsd_volumes_computation_content_item)
             # source_file
             source_file = self.geometric_design_projects[id][defs_gdp.FIELD_SOURCE_FILE]
             source_file_item = QTableWidgetItem(source_file)

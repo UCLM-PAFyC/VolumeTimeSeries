@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1091</width>
+    <width>1150</width>
     <height>350</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>850</width>
+    <width>1150</width>
     <height>350</height>
    </size>
   </property>
@@ -35,43 +35,20 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="3">
-         <widget class="QPushButton" name="idPushButton">
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Id:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="10">
-         <widget class="QPushButton" name="importPushButton">
-          <property name="text">
-           <string>Import</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QLineEdit" name="idLineEdit">
+        <item row="0" column="1" colspan="12">
+         <widget class="QLineEdit" name="fileLineEdit">
           <property name="minimumSize">
            <size>
-            <width>150</width>
+            <width>350</width>
             <height>0</height>
            </size>
           </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
          </widget>
         </item>
-        <item row="1" column="7">
-         <widget class="QPushButton" name="roiWidthPushButton">
-          <property name="text">
-           <string>ROI width (m):</string>
+        <item row="1" column="8">
+         <widget class="QLineEdit" name="roiWidthLineEdit">
+          <property name="readOnly">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -94,18 +71,18 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1" colspan="10">
-         <widget class="QLineEdit" name="fileLineEdit">
+        <item row="1" column="4">
+         <widget class="QLineEdit" name="idLineEdit">
           <property name="minimumSize">
            <size>
-            <width>350</width>
+            <width>150</width>
             <height>0</height>
            </size>
           </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
          </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QComboBox" name="formatComboBox"/>
         </item>
         <item row="1" column="5">
          <widget class="QPushButton" name="crsPushButton">
@@ -114,7 +91,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="9">
+        <item row="1" column="11">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -126,6 +103,29 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="9">
+         <widget class="QPushButton" name="gsdComputationPushButton">
+          <property name="text">
+           <string>GSD (m):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3">
+         <widget class="QPushButton" name="idPushButton">
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Id:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="formatComboBox"/>
         </item>
         <item row="1" column="6">
          <widget class="QLineEdit" name="crsLineEdit">
@@ -143,8 +143,26 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="8">
-         <widget class="QLineEdit" name="roiWidthLineEdit"/>
+        <item row="1" column="12">
+         <widget class="QPushButton" name="importPushButton">
+          <property name="text">
+           <string>Import</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="7">
+         <widget class="QPushButton" name="roiWidthPushButton">
+          <property name="text">
+           <string>ROI width (m):</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="10">
+         <widget class="QLineEdit" name="gsdComputationLineEdit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

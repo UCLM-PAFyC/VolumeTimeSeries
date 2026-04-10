@@ -92,7 +92,8 @@ class Project:
                                                      id,
                                                      crs_id,
                                                      file_path,
-                                                     roi_width):
+                                                     roi_width,
+                                                     gsd_computation):
         str_error = ''
         geometric_design_project = {}
         landXml = LandXml()
@@ -121,6 +122,41 @@ class Project:
         except Exception as e:
             str_error = 'GDAL Error: ' + e.args[0]
             return str_error, None
+        try:
+            roi_min_x, roi_max_x, roi_min_y, roi_max_y = roi_geom.GetEnvelope()
+        except Exception as e:
+            str_error = 'GDAL Error: ' + e.args[0]
+            return str_error, None
+        min_x = np.floor(roi_min_x / gsd_computation) * gsd_computation
+        max_x = np.ceil(roi_max_x / gsd_computation) * gsd_computation
+        min_y = np.floor(roi_min_y / gsd_computation) * gsd_computation
+        max_y = np.ceil(roi_max_y / gsd_computation) * gsd_computation
+        wkt_bb = "POLYGON(("
+        wkt_bb += "{:.2f}".format(min_x)
+        wkt_bb += " "
+        wkt_bb += "{:.2f}".format(min_y)
+        wkt_bb += ","
+        wkt_bb += "{:.2f}".format(min_x)
+        wkt_bb += " "
+        wkt_bb += "{:.2f}".format(max_y)
+        wkt_bb += ","
+        wkt_bb += "{:.2f}".format(max_x)
+        wkt_bb += " "
+        wkt_bb += "{:.2f}".format(max_y)
+        wkt_bb += ","
+        wkt_bb += "{:.2f}".format(max_x)
+        wkt_bb += " "
+        wkt_bb += "{:.2f}".format(min_y)
+        wkt_bb += ","
+        wkt_bb += "{:.2f}".format(min_x)
+        wkt_bb += " "
+        wkt_bb += "{:.2f}".format(min_y)
+        wkt_bb += "))"
+        try:
+            bb_geom = ogr.CreateGeometryFromWkt(wkt_linestring)
+        except Exception as e:
+            str_error = 'GDAL Error: ' + e.args[0]
+            return str_error, None
         grading_axis = False # must be False, option use grading axis for triangulation of LandXml is not implemented yet
         cross_sections = True
         # ply_file_path = None
@@ -144,9 +180,15 @@ class Project:
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_PLY] = landXml.triangulation_ply_content
         geometric_design_project[defs_gdp.FIELD_ROI_WIDTH] = roi_width
         geometric_design_project[defs_gdp.FIELD_ROI] = wkt_roi
+        geometric_design_project[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] = gsd_computation
         geometric_design_project[defs_gdp.FIELD_SOURCE_FILE] = file_path
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_POINTS] = landXml.triangulation_points
         geometric_design_project[defs_gdp.FIELD_TRIANGULATION_TRIANGLES] = landXml.triangulation_triangles
+        geometric_design_project[defs_gdp.FIELD_MINIMUM_X] = min_x
+        geometric_design_project[defs_gdp.FIELD_MAXIMUM_X] = max_x
+        geometric_design_project[defs_gdp.FIELD_MINIMUM_Y] = min_y
+        geometric_design_project[defs_gdp.FIELD_MAXIMUM_Y] = max_y
+        geometric_design_project[defs_gdp.FIELD_BB_WKT] = wkt_bb
         return str_error, geometric_design_project
 
     def geometric_design_projects_gui(self, parent_widget):

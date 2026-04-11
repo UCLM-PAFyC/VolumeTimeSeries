@@ -54,6 +54,33 @@ class VolumesComputationsDialog(QDialog):
         self.volumes_computations = None
         self.initialize()
 
+    def disable(self):
+        if len(self.volumes_computations) == 0:
+            return
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                id = id_item.text()
+                if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 1:
+                    enabled_item = self.tableWidget.item(i, 1)
+                    enabled_item.setText("False")
+                    self.volumes_computations[id][defs_vc.FIELD_ENABLED] = 0
+        return
+
+    def enable(self):
+        if len(self.volumes_computations) == 0:
+            return
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                id = id_item.text()
+                if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:
+                    enabled_item = self.tableWidget.item(i, 1)
+                    enabled_item.setText("True")
+                    self.volumes_computations[id][defs_vc.FIELD_ENABLED] = 1
+        return
+
+
     def initialize(self):
         self.last_path = self.project.settings.value("last_path")
         current_dir = QDir.current()
@@ -63,3 +90,156 @@ class VolumesComputationsDialog(QDialog):
             self.project.settings.sync()
         # deep copy using the dict() constructor
         self.volumes_computations = dict(self.project.volumes_computations)
+        self.computeForDtmCheckBox.setChecked(True)
+        self.computeForDsmCheckBox.setChecked(True)
+        self.computeForGeometricDesignsCheckBox.setChecked(True)
+        self.computeFromFirstDateCheckBox.setChecked(True)
+        self.computeFromPreviousDateCheckBox.setChecked(True)
+        self.savePushButton.clicked.connect(self.save)
+        self.tableWidget.itemDoubleClicked.connect(self.on_click)
+        self.tableWidget.itemClicked.connect(self.on_click)
+        self.removePushButton.clicked.connect(self.remove)
+        self.enablePushButton.clicked.connect(self.enable)
+        self.disablePushButton.clicked.connect(self.disable)
+        self.processPushButton.clicked.connect(self.process)
+        headers = defs_vc.headers
+        headers_tooltips = defs_vc.header_tooltips
+        self.tableWidget.setColumnCount(len(headers))
+        self.tableWidget.setStyleSheet("QHeaderView::section { color:black; background : lightGray; }")
+        for i in range(len(headers)):
+            header_item = QTableWidgetItem(headers[i])
+            header_tooltip = headers_tooltips[i]
+            header_item.setToolTip(header_tooltip)
+            self.tableWidget.setHorizontalHeaderItem(i, header_item)
+        self.tableWidget.setSizeAdjustPolicy(
+            QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.update_gui()
+
+    @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
+    def on_click(self, item):
+        row = item.row()
+        column = item.column()
+        id = self.tableWidget.item(row, 0).text()
+        current_text = item.text()
+        label = self.tableWidget.horizontalHeaderItem(column).text()
+        tool_tip_text = self.tableWidget.horizontalHeaderItem(column).toolTip()
+        title = label + ":"
+        if label == defs_vc.HEADER_DESCRIPTION_TAG:
+            text = self.volumes_computations[id][defs_vc.FIELD_DESCRIPTION]
+            readOnly = False
+            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            ret = dialog.exec()
+            text = dialog.get_text()
+            if text != self.volumes_computations[id][defs_vc.FIELD_DESCRIPTION]:
+                self.volumes_computations[id][defs_vc.FIELD_DESCRIPTION] = text
+            return
+        return
+
+    def process(self):
+        # if str_aux_error:
+        #     str_error = ('Error saving project:\n{}'.
+        #                  format(str_aux_error))
+        #     Tools.error_msg(str_error)
+        # else:
+        #     str_msg = "Process completed"
+        #     Tools.info_msg(str_msg)
+        # return
+        return
+
+    def remove(self):
+        if len(self.volumes_computations) == 0:
+            return
+        ids_to_remove = []
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                ids_to_remove.append(id_item.text())
+        if len(ids_to_remove) < 1:
+            str_error = "Select rows to remove"
+            Tools.error_msg(str_error)
+            return
+        for i in range(len(ids_to_remove)):
+            for j in range(self.tableWidget.rowCount()):
+                id_item = self.tableWidget.item(j, 0)
+                if id_item.text() == ids_to_remove[i]:
+                    self.tableWidget.removeRow(id_item.row())
+                    break
+        for id in ids_to_remove:
+            self.volumes_computations.pop(id)
+        return
+
+    def save(self):
+        self.project.volumes_computations = dict(self.volumes_computations)
+        str_aux_error = self.project.save_to_json()
+        if str_aux_error:
+            str_error = ('Error saving project:\n{}'.
+                         format(str_aux_error))
+            Tools.error_msg(str_error)
+        else:
+            str_msg = "Process completed"
+            Tools.info_msg(str_msg)
+        return
+
+    def update_gui(self):
+        self.tableWidget.setRowCount(0)
+        for id in self.volumes_computations:
+            rowPosition = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(rowPosition)
+            # id
+            id_item = QTableWidgetItem(id)
+            id_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = 0
+            self.tableWidget.setItem(rowPosition, column_pos, id_item)
+            # enabled
+            str_enabled = 'True'
+            if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:
+                str_enabled = 'False'
+            enabled_item = QTableWidgetItem(str_enabled)
+            enabled_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, enabled_item)
+            # date from
+            crs_id = self.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_FROM]
+            crs_id_item = QTableWidgetItem(crs_id)
+            crs_id_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, crs_id_item)
+            # date to
+            date_to = self.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_TO]
+            date_to_item = QTableWidgetItem(date_to)
+            date_to_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, date_to_item)
+            # crs
+            crs_id = self.volumes_computations[id][defs_vc.FIELD_CRS]
+            crs_id_item = QTableWidgetItem(crs_id)
+            crs_id_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, crs_id_item)
+            # raster file results
+            raster_results = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_RESULT]
+            raster_results_item = QTableWidgetItem(raster_results)
+            raster_results_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, raster_results_item)
+            # raster file from
+            raster_file_from = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_FROM]
+            raster_file_from_item = QTableWidgetItem(raster_file_from)
+            raster_file_from_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, raster_file_from_item)
+            # raster file to
+            raster_file_to = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_TO]
+            raster_file_to_item = QTableWidgetItem(raster_file_to)
+            raster_file_to_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, raster_file_to_item)
+            # description
+            # description = self.geometric_design_projects[id][defs_gdp.FIELD_DESCRIPTION]
+            description = defs_vc.RESUME_CONTENT
+            description_item = QTableWidgetItem(description)
+            description_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, description_item)
+        self.tableWidget.resizeColumnsToContents()
+        return

@@ -42,6 +42,7 @@ sys.path.append(os.path.join(current_path, '../..'))
 
 from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
 from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
+from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
 
 from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
 from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
@@ -264,6 +265,7 @@ class Project:
         as_dict[defs_project.PROJECT_DEFINITIONS_TAG] = self.project_definition
         as_dict[defs_project.PROJECT_GEOMETRIC_DESIGNS_TAG] = self.geometric_design_projects
         as_dict[defs_project.PROJECT_PHOTOGRAMMETRY_PROJECTS_TAG] = self.photogrammetry_projects
+        as_dict[defs_project.PROJECT_VOLUMES_COMPUTATIONS_TAG] = self.volumes_computations
         json_object = json.dumps(as_dict, indent=4, ensure_ascii=False)
         # Writing to sample.json
         with open(self.file_path, "w") as outfile:
@@ -391,6 +393,13 @@ class Project:
                 str_error = Project.__name__ + "." + self.set_from_json.__name__
                 str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
                 return str_error
+        if defs_project.PROJECT_VOLUMES_COMPUTATIONS_TAG in project_from_json:
+            str_aux_error = self.set_volumes_computations_from_json(
+                project_from_json[defs_project.PROJECT_VOLUMES_COMPUTATIONS_TAG])
+            if str_aux_error:
+                str_error = Project.__name__ + "." + self.set_from_json.__name__
+                str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
+                return str_error
         self.file_path = file_name
         return str_error
 
@@ -407,6 +416,21 @@ class Project:
                     return str_error
             photogrammetry_projects[id] = phprj_json_content
         self.photogrammetry_projects = photogrammetry_projects
+        return str_error
+
+    def set_volumes_computations_from_json(self,
+                                           json_content):
+        str_error = ""
+        volumes_computations = {}
+        for id in json_content:
+            vc_json_content = json_content[id]
+            for field_name in defs_vc.fields:
+                if not field_name in vc_json_content:
+                    str_error = ('For volume computation id: {}'.format(id))
+                    str_error += ("\nNo {} in json content".format(field_name))
+                    return str_error
+            volumes_computations[id] = vc_json_content
+        self.volumes_computations = volumes_computations
         return str_error
 
     def volumes_computations_gui(self, parent_widget):

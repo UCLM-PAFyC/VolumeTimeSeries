@@ -33,7 +33,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="computeForDtmCheckBox_2">
+      <widget class="QCheckBox" name="computeForDsmCheckBox">
        <property name="text">
         <string>Compute for DSM</string>
        </property>

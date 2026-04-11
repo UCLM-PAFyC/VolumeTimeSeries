@@ -45,7 +45,7 @@
    </property>
    <widget class="QWidget" name="parametersTtab">
     <attribute name="title">
-     <string>Project parameters</string>
+     <string>Project Workflow</string>
     </attribute>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
@@ -68,6 +68,13 @@
         <widget class="QPushButton" name="photogrammetryProjectsPushButton">
          <property name="text">
           <string>Photogrammetry Projects</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="volumesComputationsPushButton">
+         <property name="text">
+          <string>Volumes Computations</string>
          </property>
         </widget>
        </item>

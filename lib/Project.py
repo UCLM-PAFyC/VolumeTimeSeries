@@ -45,6 +45,7 @@ from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
 
 from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
 from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
+from VolumeTimeSeries.gui.VolumesComputationsDialog import VolumesComputationsDialog
 
 common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
 sys.path.append(common_libs_absolute_path)
@@ -85,6 +86,7 @@ class Project:
         self.crs_tools = None
         self.geometric_design_projects = {}
         self.photogrammetry_projects = {}
+        self.volumes_computations = {}
         # self.gpkg_tools = None
         self.initialize()
 
@@ -226,11 +228,10 @@ class Project:
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:
         #     return str_error
-        is_saved = dialog.is_saved
-        if dialog_result != QDialog.Accepted:
-            return str_error, is_saved
-        return str_error, is_saved
-
+        # is_saved = dialog.is_saved
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error, is_saved
+        # return str_error, is_saved
         return str_error
 
     def project_definition_gui(self,
@@ -406,5 +407,18 @@ class Project:
                     return str_error
             photogrammetry_projects[id] = phprj_json_content
         self.photogrammetry_projects = photogrammetry_projects
+        return str_error
+
+    def volumes_computations_gui(self, parent_widget):
+        str_error = ''
+        title = defs_gdp.DIALOG_TITLE
+        dialog = VolumesComputationsDialog(self, title, parent_widget)
+        dialog_result = dialog.exec()
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error
+        # definition_is_saved = dialog.is_saved
+        # if dialog_result != QDialog.Accepted:
+        #     return str_error, definition_is_saved
+        # return str_error, definition_is_saved
         return str_error
 

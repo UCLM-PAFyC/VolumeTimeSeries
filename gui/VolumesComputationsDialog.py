@@ -136,6 +136,17 @@ class VolumesComputationsDialog(QDialog):
         return
 
     def process(self):
+        if len(self.project.geometric_design_projects) == 0:
+            str_error = ('There are no geometric designs projects')
+            Tools.error_msg(str_error)
+        for gdp_id in self.project.geometric_design_projects:
+            gdp = self.project.geometric_design_projects[gdp_id]
+            gdp_crs = gdp[defs_gdp.FIELD_CRS]
+            gdp_gsd = gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]
+            gdp_min_x = gdp[defs_gdp.FIELD_MINIMUM_X]
+            gdp_max_x = gdp[defs_gdp.FIELD_MAXIMUM_X]
+            gdp_min_y = gdp[defs_gdp.FIELD_MINIMUM_Y]
+            gdp_max_Y = gdp[defs_gdp.FIELD_MAXIMUM_Y]
         # if str_aux_error:
         #     str_error = ('Error saving project:\n{}'.
         #                  format(str_aux_error))

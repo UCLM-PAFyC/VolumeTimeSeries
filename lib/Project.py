@@ -435,6 +435,9 @@ class Project:
 
     def volumes_computations_gui(self, parent_widget):
         str_error = ''
+        if len(self.geometric_design_projects) == 0:
+            str_error = ('There are no geometric designs projects')
+            return str_error
         title = defs_gdp.DIALOG_TITLE
         dialog = VolumesComputationsDialog(self, title, parent_widget)
         dialog_result = dialog.exec()

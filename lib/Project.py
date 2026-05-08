@@ -2,8 +2,8 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 from codecs import strict_errors
 
-from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox
-from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime
+from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox, QProgressDialog
+from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime, Qt
 
 import os
 import sys
@@ -247,20 +247,29 @@ class Project:
         output_path = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH]
         if not output_path:
             str_error = Project.__name__ + "." + self.save_to_json.__name__
-            str_error = ("Project output path is not defined")
+            str_error += ("\nProject output path is not defined")
             return str_error
         if not os.path.isdir(output_path):
             str_error = Project.__name__ + "." + self.save_to_json.__name__
-            str_error = ("Project output path is not a path:\n{}".format(output_path))
+            str_error += ("\nProject output path is not a path:\n{}".format(output_path))
             return str_error
         if not os.path.exists(output_path):
             str_error = Project.__name__ + "." + self.save_to_json.__name__
-            str_error = ("Project output path not exists:\n{}".format(output_path))
+            str_error += ("\nProject output path not exists:\n{}".format(output_path))
             return str_error
         # compute design projects as raster
         gdp_raster_filepath_by_id = {}
         if computeForGeometricDesigns:
+            steps = len(self.geometric_design_projects)
+            progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
+            progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
+            progress.setWindowTitle("Wait for finished")
+            i = 0
             for gdp_id in self.geometric_design_projects:
+                i = i + 1
+                progress.setValue(i)
+                if progress.wasCanceled():
+                    break
                 gdp = self.geometric_design_projects[gdp_id]
                 gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
                 if gdp_enabled == 0:
@@ -276,6 +285,18 @@ class Project:
                 gdp_raster_filepath = os.path.join(output_path, gdp_raster_filename)
                 gdp_raster_filepath = os.path.normpath(gdp_raster_filepath)
                 if not os.path.exists(gdp_raster_filepath):
+                    files_to_remove = []
+                    gdp_raster_qgis_filename = gdp_file_basename + "_qgis.tif"
+                    gdp_raster_qgis_filepath = os.path.join(output_path, gdp_raster_qgis_filename)
+                    gdp_raster_qgis_filepath = os.path.normpath(gdp_raster_qgis_filepath)
+                    if os.path.exists(gdp_raster_qgis_filepath):
+                        os.remove(gdp_raster_qgis_filepath)
+                    if os.path.exists(gdp_raster_qgis_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error += ("\nError removing existing raster QGIS for geometric design project: {}".format(gdp_id))
+                        progress.close()
+                        return str_error
+                    files_to_remove.append(gdp_raster_qgis_filepath)
                     # ply
                     gdp_ply_filename = gdp_file_basename + ".ply"
                     gdp_ply_filepath = os.path.join(output_path, gdp_ply_filename)
@@ -284,15 +305,18 @@ class Project:
                         os.remove(gdp_ply_filepath)
                     if os.path.exists(gdp_ply_filepath):
                         str_error = Project.__name__ + "." + self.save_to_json.__name__
-                        str_error = ("Error removing existing PLY for geometric design project: {}".format(gdp_id))
+                        str_error += ("\nError removing existing PLY for geometric design project: {}".format(gdp_id))
+                        progress.close()
                         return str_error
                     gdp_ply_content = gdp[defs_gdp.FIELD_TRIANGULATION_PLY]
                     with open(gdp_ply_filepath, "w") as f_ply:
                         f_ply.write(gdp_ply_content)
                     if not os.path.exists(gdp_ply_filepath):
                         str_error = Project.__name__ + "." + self.save_to_json.__name__
-                        str_error = ("Error making PLY for geometric design project: {}".format(gdp_id))
+                        str_error += ("\nError making PLY for geometric design project: {}".format(gdp_id))
+                        progress.close()
                         return str_error
+                    files_to_remove.append(gdp_ply_filepath)
                     # py
                     gdp_py_filename = gdp_file_basename + ".py"
                     gdp_py_filepath = os.path.join(output_path, gdp_py_filename)
@@ -301,9 +325,18 @@ class Project:
                         os.remove(gdp_py_filepath)
                     if os.path.exists(gdp_py_filepath):
                         str_error = Project.__name__ + "." + self.save_to_json.__name__
-                        str_error = ("Error removing existing PY for geometric design project: {}".format(gdp_id))
+                        str_error += ("\nError removing existing PY for geometric design project: {}".format(gdp_id))
+                        progress.close()
                         return str_error
+                    files_to_remove.append(gdp_py_filepath)
                     f_py = open(gdp_py_filepath, "w")
+                    f_py.write("import sys\n")
+                    f_py.write("from qgis.core import QgsApplication, QgsProcessingFeedback\n")
+                    f_py.write("from qgis.analysis import QgsNativeAlgorithms\n")
+                    f_py.write("QgsApplication.setPrefixPath(r'C:/Program Files/QGIS 3.40.10', True)\n")
+                    f_py.write("qgs = QgsApplication([], False)\n")
+                    f_py.write("qgs.initQgis()\n")
+                    f_py.write("sys.path.append(r'C:/Program Files/QGIS 3.40.10/apps/qgis-ltr/python/plugins')\n")
                     f_py.write("from qgis import processing\n")
                     f_py.write("from processing.core.Processing import Processing\n")
                     f_py.write("Processing.initialize()\n")
@@ -312,17 +345,70 @@ class Project:
                     f_py.write("\'{:.1f},{:.1f},".format(gdp_min_x, gdp_max_x))
                     f_py.write("{:.1f},{:.1f}\', ".format(gdp_min_y, gdp_max_y))
                     f_py.write("\"INPUT\" : \'PLY:\"")
-                    f_py.write(gdp_ply_filepath)
+                    gdp_ply_filepath_str = gdp_ply_filepath.replace("\\", "\\\\")
+                    f_py.write(gdp_ply_filepath_str)
                     f_py.write("\"\', ")
                     f_py.write("\"OUTPUT\" : \"")
-                    f_py.write(gdp_raster_filepath)
+                    gdp_raster_qgis_filepath_str = gdp_raster_qgis_filepath.replace("\\", "\\\\")
+                    f_py.write(gdp_raster_qgis_filepath_str)
                     f_py.write("\", ")
                     str_gsd = ("{:.2f}".format(gdp_gsd))
                     f_py.write("\"PIXEL_SIZE\" : ")
                     f_py.write(str_gsd)
                     f_py.write(" })\n")
                     f_py.close()
-                    yo = 1
+                    # bat
+                    gdp_bat_filename = gdp_file_basename + ".bat"
+                    gdp_bat_filepath = os.path.join(output_path, gdp_bat_filename)
+                    gdp_bat_filepath = os.path.normpath(gdp_bat_filepath)
+                    if os.path.exists(gdp_bat_filepath):
+                        os.remove(gdp_bat_filepath)
+                    if os.path.exists(gdp_bat_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error += ("\nError removing existing BAT for geometric design project: {}".format(gdp_id))
+                        progress.close()
+                        return str_error
+                    files_to_remove.append(gdp_bat_filepath)
+                    f_bat = open(gdp_bat_filepath, "w")
+                    f_bat.write("@echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
+                    f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
+                    f_bat.write("set PYTHON_TOOL=\"%PROCESS_PATH%/")
+                    f_bat.write("{}\"\n".format(gdp_py_filename))
+                    f_bat.write("set PYTHONPATH=%OSGEO4W_ROOT%\\apps\\qgis-ltr\\python;%PYTHONPATH%\n")
+                    f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
+                    f_bat.write("echo \"start\"\n")
+                    f_bat.write("python %PYTHON_TOOL%\n")
+                    crs_str = "EPSG:25830+5782"
+                    str_gdal_translate = ("gdal_translate -a_srs \"{}\" ".format(crs_str))
+                    str_gdal_translate += ("-ot uint32 -a_nodata 4294967295 -co compress=lzw ")
+                    str_gdal_translate += ("-scale 0 10000 0 1000000 -a_scale 0.01 ")
+                    str_gdal_translate += ("\"")
+                    str_gdal_translate += gdp_raster_qgis_filepath
+                    str_gdal_translate += ("\" \"")
+                    str_gdal_translate += gdp_raster_filepath
+                    str_gdal_translate += ("\"")
+                    f_bat.write("{}\n".format(str_gdal_translate))
+                    # f_bat.write("del /q \"{}\"\n".format(gdp_raster_qgis_filepath))
+                    f_bat.write("echo \"end\"\n")
+                    f_bat.close()
+                    command = gdp_bat_filepath
+                    os.system(command)
+                    if not os.path.exists(gdp_raster_qgis_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error += ("\nSomething falls executing:\n{}".format(command))
+                        progress.close()
+                        return str_error
+                    for file_to_remove in files_to_remove:
+                        os.remove(file_to_remove)
+                        if os.path.exists(file_to_remove):
+                            str_error = Project.__name__ + "." + self.save_to_json.__name__
+                            str_error += (
+                                "\nError removing file: {}".format(file_to_remove))
+                            progress.close()
+                            return str_error
+                progress.close()
                 gdp_raster_filepath_by_id[gdp_id] = gdp_raster_filepath
             yo = 1
         return str_error

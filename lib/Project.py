@@ -16,6 +16,8 @@ import numpy as np
 from datetime import datetime
 
 from osgeo import gdal, osr, ogr
+from remotior_sensus.util.files_directories import output_path
+
 gdal.UseExceptions()
 
 class GdalErrorHandler(object):
@@ -235,6 +237,96 @@ class Project:
         # return str_error, is_saved
         return str_error
 
+    def processVolumesComputations(self,
+                                   computeForDtm,
+                                   computeForDsm,
+                                   computeForGeometricDesigns,
+                                   computeFromFirstDate,
+                                   computeFromPreviousDate):
+        str_error = ''
+        output_path = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH]
+        if not output_path:
+            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = ("Project output path is not defined")
+            return str_error
+        if not os.path.isdir(output_path):
+            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = ("Project output path is not a path:\n{}".format(output_path))
+            return str_error
+        if not os.path.exists(output_path):
+            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = ("Project output path not exists:\n{}".format(output_path))
+            return str_error
+        # compute design projects as raster
+        gdp_raster_filepath_by_id = {}
+        if computeForGeometricDesigns:
+            for gdp_id in self.geometric_design_projects:
+                gdp = self.geometric_design_projects[gdp_id]
+                gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
+                if gdp_enabled == 0:
+                    continue
+                gdp_file_basename = "gdp_" + gdp_id
+                gdp_crs = gdp[defs_gdp.FIELD_CRS]
+                gdp_gsd = gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]
+                gdp_min_x = gdp[defs_gdp.FIELD_MINIMUM_X]
+                gdp_max_x = gdp[defs_gdp.FIELD_MAXIMUM_X]
+                gdp_min_y = gdp[defs_gdp.FIELD_MINIMUM_Y]
+                gdp_max_y = gdp[defs_gdp.FIELD_MAXIMUM_Y]
+                gdp_raster_filename = gdp_file_basename + ".tif"
+                gdp_raster_filepath = os.path.join(output_path, gdp_raster_filename)
+                gdp_raster_filepath = os.path.normpath(gdp_raster_filepath)
+                if not os.path.exists(gdp_raster_filepath):
+                    # ply
+                    gdp_ply_filename = gdp_file_basename + ".ply"
+                    gdp_ply_filepath = os.path.join(output_path, gdp_ply_filename)
+                    gdp_ply_filepath = os.path.normpath(gdp_ply_filepath)
+                    if os.path.exists(gdp_ply_filepath):
+                        os.remove(gdp_ply_filepath)
+                    if os.path.exists(gdp_ply_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = ("Error removing existing PLY for geometric design project: {}".format(gdp_id))
+                        return str_error
+                    gdp_ply_content = gdp[defs_gdp.FIELD_TRIANGULATION_PLY]
+                    with open(gdp_ply_filepath, "w") as f_ply:
+                        f_ply.write(gdp_ply_content)
+                    if not os.path.exists(gdp_ply_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = ("Error making PLY for geometric design project: {}".format(gdp_id))
+                        return str_error
+                    # py
+                    gdp_py_filename = gdp_file_basename + ".py"
+                    gdp_py_filepath = os.path.join(output_path, gdp_py_filename)
+                    gdp_py_filepath = os.path.normpath(gdp_py_filepath)
+                    if os.path.exists(gdp_py_filepath):
+                        os.remove(gdp_py_filepath)
+                    if os.path.exists(gdp_py_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = ("Error removing existing PY for geometric design project: {}".format(gdp_id))
+                        return str_error
+                    f_py = open(gdp_py_filepath, "w")
+                    f_py.write("from qgis import processing\n")
+                    f_py.write("from processing.core.Processing import Processing\n")
+                    f_py.write("Processing.initialize()\n")
+                    f_py.write("processing.run(\"native:meshrasterize\",{ \"DATASET_GROUPS\" : [0], ")
+                    f_py.write("\"DATASET_TIME\" : {\'type\': \'static\'}, \"EXTENT\" : ")
+                    f_py.write("\'{:.1f},{:.1f},".format(gdp_min_x, gdp_max_x))
+                    f_py.write("{:.1f},{:.1f}\', ".format(gdp_min_y, gdp_max_y))
+                    f_py.write("\"INPUT\" : \'PLY:\"")
+                    f_py.write(gdp_ply_filepath)
+                    f_py.write("\"\', ")
+                    f_py.write("\"OUTPUT\" : \"")
+                    f_py.write(gdp_raster_filepath)
+                    f_py.write("\", ")
+                    str_gsd = ("{:.2f}".format(gdp_gsd))
+                    f_py.write("\"PIXEL_SIZE\" : ")
+                    f_py.write(str_gsd)
+                    f_py.write(" })\n")
+                    f_py.close()
+                    yo = 1
+                gdp_raster_filepath_by_id[gdp_id] = gdp_raster_filepath
+            yo = 1
+        return str_error
+
     def project_definition_gui(self,
                                is_process_creation):
         str_error = ""
@@ -438,7 +530,7 @@ class Project:
         if len(self.geometric_design_projects) == 0:
             str_error = ('There are no geometric designs projects')
             return str_error
-        title = defs_gdp.DIALOG_TITLE
+        title = defs_vc.DIALOG_TITLE
         dialog = VolumesComputationsDialog(self, title, parent_widget)
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:

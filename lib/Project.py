@@ -45,6 +45,7 @@ sys.path.append(os.path.join(current_path, '../..'))
 from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
 from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
 from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
+from VolumeTimeSeries.defs import defs_qgis_paths
 
 from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
 from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
@@ -91,6 +92,12 @@ class Project:
         self.photogrammetry_projects = {}
         self.volumes_computations = {}
         # self.gpkg_tools = None
+        self.qgis_prefix_path = None
+        self.osge4w_bat_path = None
+        self.osge4w_bin_path = None
+        self.qgis_bin_path = None
+        self.qgis_plugins_path = None
+        self.qgis_python_path = None
         self.initialize()
 
     def create_geometric_design_project_from_landxml(self,
@@ -209,6 +216,9 @@ class Project:
         # return str_error, definition_is_saved
         return str_error
 
+    def get_qgis_prefix_path(self):
+        return self.qgis_prefix_path
+
     def initialize(self):
         self.crs_tools = CRSsTools()
         epsg_crs_prefix = defs_crs.EPSG_TAG + ':'
@@ -222,6 +232,23 @@ class Project:
         # self.gpkg_tools = GpkgTools(self.crs_tools)
         if self.qgis_iface:
             self.qgis_iface.set_project(self)
+        else:
+            self.qgis_prefix_path = self.settings.value("qgis_prefix_path")
+            if not self.qgis_prefix_path:
+                self.qgis_prefix_path = None
+                return
+            if not os.path.exists(self.qgis_prefix_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                self.qgis_prefix_path = None
+                return
+            self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
+            self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
+            self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
+            self.qgis_plugins_path = os.path.normpath(
+                self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
+            self.qgis_python_path = os.path.normpath(
+                self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
         return
 
     def photogrammetry_projects_gui(self, parent_widget):
@@ -594,6 +621,76 @@ class Project:
                     return str_error
             photogrammetry_projects[id] = phprj_json_content
         self.photogrammetry_projects = photogrammetry_projects
+        return str_error
+
+    def set_qgis_prefix_path(self, qgis_prefix_path):
+        str_error = ""
+        self.qgis_prefix_path = qgis_prefix_path
+        if not self.qgis_prefix_path:
+            self.qgis_prefix_path = None
+            str_error = ('QGis prefix path is empty')
+            return str_error
+        if not os.path.exists(self.qgis_prefix_path):
+            self.settings.setValue("qgis_prefix_path", "")
+            self.settings.sync()
+            str_error = ('Not exists QGis prefix path:\n{}'.format(self.qgis_prefix_path))
+            self.qgis_prefix_path = None
+            return str_error
+        else:
+            self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
+            if not os.path.exists(self.osge4w_bat_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                str_error = ('Not exists OSGeo4W bat file:\n{}'.format(self.osge4w_bat_path))
+                self.qgis_prefix_path = None
+                self.osge4w_bat_path = None
+                return str_error
+            self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
+            if not os.path.exists(self.osge4w_bin_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                str_error = ('Not exists OSGeo4W bin path:\n{}'.format(self.osge4w_bin_path))
+                self.qgis_prefix_path = None
+                self.osge4w_bat_path = None
+                self.osge4w_bin_path = None
+                return str_error
+            self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
+            if not os.path.exists(self.qgis_bin_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                str_error = ('Not exists QGIS bin path:\n{}'.format(self.qgis_bin_path))
+                self.qgis_prefix_path = None
+                self.osge4w_bat_path = None
+                self.osge4w_bin_path = None
+                self.qgis_bin_path = None
+                return str_error
+            self.qgis_plugins_path = os.path.normpath(
+                self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
+            if not os.path.exists(self.qgis_plugins_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                str_error = ('Not exists QGIS plugins path:\n{}'.format(self.qgis_plugins_path))
+                self.qgis_prefix_path = None
+                self.osge4w_bat_path = None
+                self.osge4w_bin_path = None
+                self.qgis_bin_path = None
+                self.qgis_plugins_path = None
+                return str_error
+            self.qgis_python_path = os.path.normpath(
+                self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
+            if not os.path.exists(self.qgis_python_path):
+                self.settings.setValue("qgis_prefix_path", "")
+                self.settings.sync()
+                str_error = ('Not exists QGIS python path:\n{}'.format(self.qgis_python_path))
+                self.qgis_prefix_path = None
+                self.osge4w_bat_path = None
+                self.osge4w_bin_path = None
+                self.qgis_bin_path = None
+                self.qgis_plugins_path = None
+                self.qgis_python_path = None
+                return str_error
+            self.settings.setValue("qgis_prefix_path", self.qgis_prefix_path)
+            self.settings.sync()
         return str_error
 
     def set_volumes_computations_from_json(self,

@@ -96,6 +96,7 @@ class VolumesComputationsDialog(QDialog):
         self.computeFromFirstDateCheckBox.setChecked(True)
         self.computeFromPreviousDateCheckBox.setChecked(True)
         self.savePushButton.clicked.connect(self.save)
+        self.qgisPathPushButton.clicked.connect(self.select_qgis_path)
         self.tableWidget.itemDoubleClicked.connect(self.on_click)
         self.tableWidget.itemClicked.connect(self.on_click)
         self.removePushButton.clicked.connect(self.remove)
@@ -113,6 +114,9 @@ class VolumesComputationsDialog(QDialog):
             self.tableWidget.setHorizontalHeaderItem(i, header_item)
         self.tableWidget.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
+        qgis_prefix_path = self.project.get_qgis_prefix_path()
+        if qgis_prefix_path:
+            self.qgisPathLineEdit.setText(qgis_prefix_path)
         self.update_gui()
 
     @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
@@ -190,6 +194,26 @@ class VolumesComputationsDialog(QDialog):
         else:
             str_msg = "Process completed"
             Tools.info_msg(str_msg)
+        return
+
+    def select_qgis_path(self):
+        dialog = QtWidgets.QFileDialog()
+        last_path = self.qgisPathLineEdit.text()
+        if not last_path:
+            last_path = self.project.settings.value("last_path")
+            if not last_path:
+                last_path = QDir.currentPath()
+                self.settings.setValue("last_path", last_path)
+                self.settings.sync()
+        dialog.setDirectory(last_path)
+        qgis_prefix_path = dialog.getExistingDirectory(self, "Select QGIS path")
+        if qgis_prefix_path:
+            str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path) # inside set in settings
+            if str_aux_error:
+                str_error = ('Error setting QGIS path:\n{}'.format(str_aux_error))
+                Tools.error_msg(str_error)
+            else:
+                self.qgisPathLineEdit.setText(qgis_prefix_path)
         return
 
     def update_gui(self):

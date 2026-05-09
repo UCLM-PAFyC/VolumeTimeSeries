@@ -9,6 +9,7 @@ sys.path.append(os.path.join(current_path, '..'))
 from VolumeTimeSeries.lib.Project import Project
 from VolumeTimeSeries.defs import defs_project
 from VolumeTimeSeries.defs import defs_main
+from VolumeTimeSeries.defs import defs_qgis_paths
 # from lib import gui_defines as gd
 # from lib import qgis_gui_defines as qgd
 # from pyCRSs import CRSsDefines as cd
@@ -30,6 +31,12 @@ class QGisIFace:
         self.plugin_path = plugin_path
         self.project = None
         self.project_crs = None
+        self.qgis_prefix_path = QgsApplication.prefixPath()
+        self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
+        self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
+        self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
+        self.qgis_plugins_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
+        self.qgis_python_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
 
     def close_project(self):
         if not self.project:

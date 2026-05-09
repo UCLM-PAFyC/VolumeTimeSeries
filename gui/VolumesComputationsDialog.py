@@ -143,6 +143,10 @@ class VolumesComputationsDialog(QDialog):
         if len(self.project.geometric_design_projects) == 0:
             str_error = ('There are no geometric designs projects')
             Tools.error_msg(str_error)
+        qgis_prefix_path = self.qgisPathLineEdit.text()
+        if not qgis_prefix_path:
+            str_error = ('Select QGIS prefix path before')
+            Tools.error_msg(str_error)
         computeForDtm = self.computeForDtmCheckBox.isChecked()
         computeForDsm = self.computeForDsmCheckBox.isChecked()
         computeForGeometricDesigns = self.computeForGeometricDesignsCheckBox.isChecked()

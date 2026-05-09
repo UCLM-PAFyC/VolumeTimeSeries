@@ -60,6 +60,19 @@ class VolumeTimeSeriesDialog(QDialog):
                 str_error = ('Project definition must be save')
                 str_error += '\n{}'.format("CRSs definition cannot will be changed")
                 Tools.error_msg(str_error)
+        if self.project.qgis_iface is not None:
+            qgis_prefix_path = self.project.qgis_iface.get_qgis_prefix_path()
+            str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
+            if str_aux_error:
+                str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
+                Tools.error_msg(str_error)
+        else:
+            qgis_prefix_path = self.settings.value("qgis_prefix_path")
+            if qgis_prefix_path:
+                str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
+                if str_aux_error:
+                    str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
+                    Tools.error_msg(str_error)
         return str_error
 
     def geometric_design_projects(self):
@@ -100,6 +113,19 @@ class VolumeTimeSeriesDialog(QDialog):
         self.project = Project(self.qgis_iface,
                                self.settings,
                                self.app_path)
+        if self.project.qgis_iface is not None:
+            qgis_prefix_path = self.project.qgis_iface.get_qgis_prefix_path()
+            str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
+            if str_aux_error:
+                str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
+                Tools.error_msg(str_error)
+        else:
+            qgis_prefix_path = self.settings.value("qgis_prefix_path")
+            if qgis_prefix_path:
+                str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
+                if str_aux_error:
+                    str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
+                    Tools.error_msg(str_error)
         str_error = self.project.set_from_json(file_name)
         return str_error
 

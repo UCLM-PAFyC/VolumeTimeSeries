@@ -75,6 +75,9 @@ class QGisIFace:
         wkb = geometry.asWkb()
         return str_error, wkb
 
+    def get_qgis_prefix_path(self):
+        return self.qgis_prefix_path
+
     def load_project(self):
         root = QgsProject.instance().layerTreeRoot()
         # project_tag = self.project.project_definition[gd.PROJECT_DEFINITIONS_TAG_TAG]

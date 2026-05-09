@@ -232,23 +232,6 @@ class Project:
         # self.gpkg_tools = GpkgTools(self.crs_tools)
         if self.qgis_iface:
             self.qgis_iface.set_project(self)
-        else:
-            self.qgis_prefix_path = self.settings.value("qgis_prefix_path")
-            if not self.qgis_prefix_path:
-                self.qgis_prefix_path = None
-                return
-            if not os.path.exists(self.qgis_prefix_path):
-                self.settings.setValue("qgis_prefix_path", "")
-                self.settings.sync()
-                self.qgis_prefix_path = None
-                return
-            self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
-            self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
-            self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
-            self.qgis_plugins_path = os.path.normpath(
-                self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
-            self.qgis_python_path = os.path.normpath(
-                self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
         return
 
     def photogrammetry_projects_gui(self, parent_widget):
@@ -276,6 +259,10 @@ class Project:
             str_error = Project.__name__ + "." + self.save_to_json.__name__
             str_error += ("\nProject output path is not defined")
             return str_error
+        if self.qgis_prefix_path is None:
+            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error += ("\nQGIS prefix path is None")
+            return str_error
         if not os.path.isdir(output_path):
             str_error = Project.__name__ + "." + self.save_to_json.__name__
             str_error += ("\nProject output path is not a path:\n{}".format(output_path))
@@ -291,6 +278,7 @@ class Project:
             progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
             progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
             progress.setWindowTitle("Wait for finished")
+            progress.exec()
             i = 0
             for gdp_id in self.geometric_design_projects:
                 i = i + 1
@@ -360,10 +348,12 @@ class Project:
                     f_py.write("import sys\n")
                     f_py.write("from qgis.core import QgsApplication, QgsProcessingFeedback\n")
                     f_py.write("from qgis.analysis import QgsNativeAlgorithms\n")
-                    f_py.write("QgsApplication.setPrefixPath(r'C:/Program Files/QGIS 3.40.10', True)\n")
+                    # f_py.write("QgsApplication.setPrefixPath(r'C:/Program Files/QGIS 3.40.10', True)\n")
+                    f_py.write("QgsApplication.setPrefixPath(r'{}', True)\n".format(self.qgis_prefix_path))
                     f_py.write("qgs = QgsApplication([], False)\n")
                     f_py.write("qgs.initQgis()\n")
-                    f_py.write("sys.path.append(r'C:/Program Files/QGIS 3.40.10/apps/qgis-ltr/python/plugins')\n")
+                    f_py.write("sys.path.append(r'{}')\n".format(self.qgis_plugins_path))
+                    # f_py.write("sys.path.append(r'C:/Program Files/QGIS 3.40.10/apps/qgis-ltr/python/plugins')\n")
                     f_py.write("from qgis import processing\n")
                     f_py.write("from processing.core.Processing import Processing\n")
                     f_py.write("Processing.initialize()\n")
@@ -398,13 +388,19 @@ class Project:
                     files_to_remove.append(gdp_bat_filepath)
                     f_bat = open(gdp_bat_filepath, "w")
                     f_bat.write("@echo off\n")
-                    f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
-                    f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
-                    f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
-                    f_bat.write("set PYTHON_TOOL=\"%PROCESS_PATH%/")
-                    f_bat.write("{}\"\n".format(gdp_py_filename))
-                    f_bat.write("set PYTHONPATH=%OSGEO4W_ROOT%\\apps\\qgis-ltr\\python;%PYTHONPATH%\n")
-                    f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    # f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
+                    f_bat.write("set PROCESS_PATH={}\n".format(output_path))
+                    # f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
+                    f_bat.write("set PYTHON_TOOL=\"{}\"\n".format(gdp_py_filepath))
+                    # f_bat.write("{}\"\n".format(gdp_py_filename))
+                    f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                    # f_bat.write("set PYTHONPATH=%OSGEO4W_ROOT%\\apps\\qgis-ltr\\python;%PYTHONPATH%\n")
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    # f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
                     f_bat.write("echo \"start\"\n")
                     f_bat.write("python %PYTHON_TOOL%\n")
                     crs_str = "EPSG:25830+5782"
@@ -625,7 +621,7 @@ class Project:
 
     def set_qgis_prefix_path(self, qgis_prefix_path):
         str_error = ""
-        self.qgis_prefix_path = qgis_prefix_path
+        self.qgis_prefix_path = os.path.normpath(qgis_prefix_path)
         if not self.qgis_prefix_path:
             self.qgis_prefix_path = None
             str_error = ('QGis prefix path is empty')

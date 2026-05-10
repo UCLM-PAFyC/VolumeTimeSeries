@@ -7,6 +7,7 @@ from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime, Qt
 
 import os
 import sys
+import subprocess
 import math
 import random
 import re
@@ -275,16 +276,21 @@ class Project:
         gdp_raster_filepath_by_id = {}
         if computeForGeometricDesigns:
             steps = len(self.geometric_design_projects)
-            progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
+            progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, 0)
+            # progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
             progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
             progress.setWindowTitle("Wait for finished")
-            progress.exec()
-            i = 0
+            progress.show()
+            QApplication.processEvents()
+            # i = 0
             for gdp_id in self.geometric_design_projects:
-                i = i + 1
-                progress.setValue(i)
-                if progress.wasCanceled():
-                    break
+                # i = i + 1
+                # progress.setValue(i)
+                # if progress.wasCanceled():
+                #     break
+                progress.setLabelText('Processing Geometric Design Project: {}'.format(gdp_id))
+                QApplication.processEvents()
+                # progress.show()
                 gdp = self.geometric_design_projects[gdp_id]
                 gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
                 if gdp_enabled == 0:
@@ -417,7 +423,8 @@ class Project:
                     f_bat.write("echo \"end\"\n")
                     f_bat.close()
                     command = gdp_bat_filepath
-                    os.system(command)
+                    result = subprocess.run([command], capture_output=True, text=True)
+                    # os.system(command)
                     if not os.path.exists(gdp_raster_qgis_filepath):
                         str_error = Project.__name__ + "." + self.save_to_json.__name__
                         str_error += ("\nSomething falls executing:\n{}".format(command))
@@ -431,6 +438,7 @@ class Project:
                                 "\nError removing file: {}".format(file_to_remove))
                             progress.close()
                             return str_error
+                    QApplication.processEvents()
                 progress.close()
                 gdp_raster_filepath_by_id[gdp_id] = gdp_raster_filepath
             yo = 1

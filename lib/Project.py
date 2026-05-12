@@ -307,17 +307,17 @@ class Project:
                 gdp_raster_filepath = os.path.normpath(gdp_raster_filepath)
                 if not os.path.exists(gdp_raster_filepath):
                     files_to_remove = []
-                    gdp_raster_qgis_filename = gdp_file_basename + "_qgis.tif"
-                    gdp_raster_qgis_filepath = os.path.join(output_path, gdp_raster_qgis_filename)
-                    gdp_raster_qgis_filepath = os.path.normpath(gdp_raster_qgis_filepath)
-                    if os.path.exists(gdp_raster_qgis_filepath):
-                        os.remove(gdp_raster_qgis_filepath)
-                    if os.path.exists(gdp_raster_qgis_filepath):
-                        str_error = Project.__name__ + "." + self.save_to_json.__name__
-                        str_error += ("\nError removing existing raster QGIS for geometric design project: {}".format(gdp_id))
-                        progress.close()
-                        return str_error
-                    files_to_remove.append(gdp_raster_qgis_filepath)
+                    # gdp_raster_qgis_filename = gdp_file_basename + "_qgis.tif"
+                    # gdp_raster_qgis_filepath = os.path.join(output_path, gdp_raster_qgis_filename)
+                    # gdp_raster_qgis_filepath = os.path.normpath(gdp_raster_qgis_filepath)
+                    # if os.path.exists(gdp_raster_qgis_filepath):
+                    #     os.remove(gdp_raster_qgis_filepath)
+                    # if os.path.exists(gdp_raster_qgis_filepath):
+                    #     str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    #     str_error += ("\nError removing existing raster QGIS for geometric design project: {}".format(gdp_id))
+                    #     progress.close()
+                    #     return str_error
+                    # files_to_remove.append(gdp_raster_qgis_filepath)
                     # ply
                     gdp_ply_filename = gdp_file_basename + ".ply"
                     gdp_ply_filepath = os.path.join(output_path, gdp_ply_filename)
@@ -372,12 +372,14 @@ class Project:
                     f_py.write(gdp_ply_filepath_str)
                     f_py.write("\"\', ")
                     f_py.write("\"OUTPUT\" : \"")
-                    gdp_raster_qgis_filepath_str = gdp_raster_qgis_filepath.replace("\\", "\\\\")
-                    f_py.write(gdp_raster_qgis_filepath_str)
+                    gdp_raster_filepath = gdp_raster_filepath.replace("\\", "\\\\")
+                    f_py.write(gdp_raster_filepath)
+                    # f_py.write(gdp_raster_qgis_filepath_str)
                     f_py.write("\", ")
                     str_gsd = ("{:.2f}".format(gdp_gsd))
                     f_py.write("\"PIXEL_SIZE\" : ")
                     f_py.write(str_gsd)
+                    f_py.write(", \"CREATE_OPTIONS\" : \'COMPRESS=LZW\'")
                     f_py.write(" })\n")
                     f_py.close()
                     # bat
@@ -409,23 +411,27 @@ class Project:
                     # f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
                     f_bat.write("echo \"start\"\n")
                     f_bat.write("python %PYTHON_TOOL%\n")
-                    crs_str = "EPSG:25830+5782"
-                    str_gdal_translate = ("gdal_translate -a_srs \"{}\" ".format(crs_str))
-                    str_gdal_translate += ("-ot uint32 -a_nodata 4294967295 -co compress=lzw ")
-                    str_gdal_translate += ("-scale 0 10000 0 1000000 -a_scale 0.01 ")
-                    str_gdal_translate += ("\"")
-                    str_gdal_translate += gdp_raster_qgis_filepath
-                    str_gdal_translate += ("\" \"")
-                    str_gdal_translate += gdp_raster_filepath
-                    str_gdal_translate += ("\"")
-                    f_bat.write("{}\n".format(str_gdal_translate))
+                    crs_str = gdp_crs
+                    f_bat.write("gdal_edit -a_srs \"{}\" \"".format(crs_str))
+                    f_bat.write(gdp_raster_filepath)
+                    f_bat.write("\"\n")
+                    # str_gdal_translate = ("gdal_translate -a_srs \"{}\" ".format(crs_str))
+                    # str_gdal_translate += ("-ot uint32 -a_nodata 4294967295 -co compress=lzw ")
+                    # str_gdal_translate += ("-scale 0 10000 0 1000000 -a_scale 0.01 ")
+                    # str_gdal_translate += ("\"")
+                    # str_gdal_translate += gdp_raster_qgis_filepath
+                    # str_gdal_translate += ("\" \"")
+                    # str_gdal_translate += gdp_raster_filepath
+                    # str_gdal_translate += ("\"")
+                    # f_bat.write("{}\n".format(str_gdal_translate))
                     # f_bat.write("del /q \"{}\"\n".format(gdp_raster_qgis_filepath))
                     f_bat.write("echo \"end\"\n")
                     f_bat.close()
                     command = gdp_bat_filepath
                     result = subprocess.run([command], capture_output=True, text=True)
                     # os.system(command)
-                    if not os.path.exists(gdp_raster_qgis_filepath):
+                    # if not os.path.exists(gdp_raster_qgis_filepath):
+                    if not os.path.exists(gdp_raster_filepath):
                         str_error = Project.__name__ + "." + self.save_to_json.__name__
                         str_error += ("\nSomething falls executing:\n{}".format(command))
                         progress.close()

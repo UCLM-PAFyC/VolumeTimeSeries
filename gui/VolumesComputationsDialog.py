@@ -93,6 +93,7 @@ class VolumesComputationsDialog(QDialog):
         self.computeForDtmCheckBox.setChecked(True)
         self.computeForDsmCheckBox.setChecked(True)
         self.computeForGeometricDesignsCheckBox.setChecked(True)
+        self.computeForGeometricDesignsCheckBox.setEnabled(False)
         self.computeFromFirstDateCheckBox.setChecked(True)
         self.computeFromPreviousDateCheckBox.setChecked(True)
         self.savePushButton.clicked.connect(self.save)

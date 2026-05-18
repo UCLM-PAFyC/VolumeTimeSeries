@@ -455,6 +455,7 @@ class Project:
         dsm_commands = []
         dsm_commands_output_filepaths = []
         dsm_filepath_by_gdp_id_by_id = {}
+        dsms_id_by_gdp_id_by_date = {}
         if computeForDsm:
             for gdp_id in self.geometric_design_projects:
                 gdp = self.geometric_design_projects[gdp_id]
@@ -482,6 +483,12 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DSM + ".tif")
                     dsm_gdp_phgmp_file_path = os.path.join(output_path, dsm_gdp_phgmp_filename)
                     dsm_gdp_phgmp_file_path = os.path.normpath(dsm_gdp_phgmp_file_path)
+                    phgmp_dsm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
+                    if not gdp_id in dsms_id_by_gdp_id_by_date:
+                        dsms_id_by_gdp_id_by_date[gdp_id] = {}
+                    if not phgmp_dsm_date in dsms_id_by_gdp_id_by_date[gdp_id]:
+                        dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date] = []
+                    dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date].append(phgmp_id)
                     if not os.path.exists(dsm_gdp_phgmp_file_path):
                         phgmp_dsm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DSM_CRS]
                         dsm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
@@ -553,6 +560,7 @@ class Project:
         dtm_commands = []
         dtm_commands_output_filepaths = []
         dtm_filepath_by_gdp_id_by_id = {}
+        dtms_id_by_gdp_id_by_date = {}
         if computeForDtm:
             for gdp_id in self.geometric_design_projects:
                 gdp = self.geometric_design_projects[gdp_id]
@@ -580,6 +588,12 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DTM + ".tif")
                     dtm_gdp_phgmp_file_path = os.path.join(output_path, dtm_gdp_phgmp_filename)
                     dtm_gdp_phgmp_file_path = os.path.normpath(dtm_gdp_phgmp_file_path)
+                    phgmp_dtm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
+                    if not gdp_id in dtms_id_by_gdp_id_by_date:
+                        dtms_id_by_gdp_id_by_date[gdp_id] = {}
+                    if not phgmp_dtm_date in dtms_id_by_gdp_id_by_date[gdp_id]:
+                        dtms_id_by_gdp_id_by_date[gdp_id][phgmp_dtm_date] = []
+                    dtms_id_by_gdp_id_by_date[gdp_id][phgmp_dtm_date].append(phgmp_id)
                     if not os.path.exists(dtm_gdp_phgmp_file_path):
                         phgmp_dtm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DTM_CRS]
                         dtm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
@@ -647,11 +661,19 @@ class Project:
                         os.remove(gdp_bat_filepath)
                 progress.close()
                 QApplication.processEvents()
-
+        # compute dsm volumes
+        if computeForDsm:
+            for gdp_id in gdp_raster_filepath_by_id:
+                gdp_raster_file_path = gdp_raster_filepath_by_id[gdp_id]
+                for str_date in dsms_id_by_gdp_id_by_date[gdp_id]:
+                    dtms_id = dsms_id_by_gdp_id_by_date[gdp_id][str_date]
+                    yo = 1
         # compute volume raster DTM files
-        # dtm_commands = []
+        # gdp_raster_filepath_by_id = []
         # dtm_commands_output_filepaths = []
         # dtm_filepath_by_gdp_id_by_id = {}
+        # dtms_id_by_gdp_id_by_date
+        # dsms_id_by_gdp_id_by_date
         return str_error
 
     def project_definition_gui(self,

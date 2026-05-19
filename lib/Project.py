@@ -498,10 +498,22 @@ class Project:
                     dsm_fp_gdp_phgmp_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_filename)
                     dsm_fp_gdp_phgmp_file_path = os.path.normpath(dsm_fp_gdp_phgmp_file_path)
                     phgmp_dsm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
+                    if not gdp_id in dsms_id_by_gdp_id_by_date:
+                        dsms_id_by_gdp_id_by_date[gdp_id] = {}
                     if not phgmp_dsm_date in dsms_id_by_gdp_id_by_date[gdp_id]:
                         dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date] = []
                     dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date].append(phgmp_id)
-                    if not os.path.exists(dsm_gdp_phgmp_file_path):
+                    if not gdp_id in dsm_filepath_by_gdp_id_by_id:
+                        dsm_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dsm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_gdp_phgmp_file_path
+                    if not gdp_id in dsm_fp_filepath_by_gdp_id_by_id:
+                        dsm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dsm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_fp_gdp_phgmp_file_path
+                    if not os.path.exists(dsm_gdp_phgmp_file_path) or not os.path.exists(dsm_fp_gdp_phgmp_file_path):
+                        if os.path.exists(dsm_gdp_phgmp_file_path):
+                            os.remove(dsm_gdp_phgmp_file_path)
+                        if os.path.exists(dsm_fp_gdp_phgmp_file_path):
+                            os.remove(dsm_fp_gdp_phgmp_file_path)
                         phgmp_dsm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DSM_CRS]
                         dsm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
                         dsm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
@@ -517,12 +529,6 @@ class Project:
                         dsm_fp_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path, dsm_fp_gdp_phgmp_file_path))
                         dsm_commands.append(dsm_fp_command)
                         dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
-                    if not gdp_id in dsm_filepath_by_gdp_id_by_id:
-                        dsm_filepath_by_gdp_id_by_id[gdp_id] = {}
-                    dsm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_gdp_phgmp_file_path
-                    if not gdp_id in dsm_fp_filepath_by_gdp_id_by_id:
-                        dsm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
-                    dsm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_fp_gdp_phgmp_file_path
             if len(dsm_commands) > 0:
                 steps = len(dsm_commands)
                 progress = QProgressDialog("Computing optimized DSM files...", "Cancel", 0, steps)
@@ -620,7 +626,17 @@ class Project:
                     if not phgmp_dtm_date in dtms_id_by_gdp_id_by_date[gdp_id]:
                         dtms_id_by_gdp_id_by_date[gdp_id][phgmp_dtm_date] = []
                     dtms_id_by_gdp_id_by_date[gdp_id][phgmp_dtm_date].append(phgmp_id)
-                    if not os.path.exists(dtm_gdp_phgmp_file_path):
+                    if not gdp_id in dtm_filepath_by_gdp_id_by_id:
+                        dtm_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dtm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_gdp_phgmp_file_path
+                    if not gdp_id in dtm_fp_filepath_by_gdp_id_by_id:
+                        dtm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dtm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_fp_gdp_phgmp_file_path
+                    if not os.path.exists(dtm_gdp_phgmp_file_path) or not os.path.exists(dtm_fp_gdp_phgmp_file_path):
+                        if os.path.exists(dtm_gdp_phgmp_file_path):
+                            os.remove(dtm_gdp_phgmp_file_path)
+                        if os.path.exists(dtm_fp_gdp_phgmp_file_path):
+                            os.remove(dtm_fp_gdp_phgmp_file_path)
                         phgmp_dtm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DTM_CRS]
                         dtm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
                         dtm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
@@ -636,12 +652,6 @@ class Project:
                         dtm_fp_command += (" \"{}\" \"{}\"".format(dtm_gdp_phgmp_file_path, dtm_fp_gdp_phgmp_file_path))
                         dtm_commands.append(dtm_fp_command)
                         dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
-                    if not gdp_id in dtm_filepath_by_gdp_id_by_id:
-                        dtm_filepath_by_gdp_id_by_id[gdp_id] = {}
-                    dtm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_gdp_phgmp_file_path
-                    if not gdp_id in dtm_fp_filepath_by_gdp_id_by_id:
-                        dtm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
-                    dtm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_fp_gdp_phgmp_file_path
             if len(dtm_commands) > 0:
                 steps = len(dtm_commands)
                 progress = QProgressDialog("Computing optimized DTM files...", "Cancel", 0, steps)

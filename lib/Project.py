@@ -279,6 +279,7 @@ class Project:
             return str_error
         # compute design projects as raster
         gdp_raster_filepath_by_id = {}
+        gdp_raster_fp_filepath_by_id = {}
         steps = len(self.geometric_design_projects)
         progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, 0)
         # progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
@@ -301,14 +302,17 @@ class Project:
                 continue
             gdp_file_basename = "gdp_" + gdp_id
             gdp_crs = gdp[defs_gdp.FIELD_CRS]
-            gdp_gsd = gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]
-            gdp_min_x = gdp[defs_gdp.FIELD_MINIMUM_X]
-            gdp_max_x = gdp[defs_gdp.FIELD_MAXIMUM_X]
-            gdp_min_y = gdp[defs_gdp.FIELD_MINIMUM_Y]
-            gdp_max_y = gdp[defs_gdp.FIELD_MAXIMUM_Y]
+            gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]*100.)/100. # cm accuracy
+            gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+            gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+            gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+            gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
             gdp_raster_filename = gdp_file_basename + ".tif"
             gdp_raster_filepath = os.path.join(output_path, gdp_raster_filename)
             gdp_raster_filepath = os.path.normpath(gdp_raster_filepath)
+            gdp_raster_fp_filename = gdp_file_basename + ".geojson"
+            gdp_raster_fp_filepath = os.path.join(output_path, gdp_raster_fp_filename)
+            gdp_raster_fp_filepath = os.path.normpath(gdp_raster_fp_filepath)
             if not os.path.exists(gdp_raster_filepath):
                 files_to_remove = []
                 # gdp_raster_qgis_filename = gdp_file_basename + "_qgis.tif"
@@ -380,7 +384,7 @@ class Project:
                 f_py.write(gdp_raster_filepath)
                 # f_py.write(gdp_raster_qgis_filepath_str)
                 f_py.write("\", ")
-                str_gsd = ("{:.2f}".format(gdp_gsd))
+                str_gsd = ("{:.3f}".format(gdp_gsd))
                 f_py.write("\"PIXEL_SIZE\" : ")
                 f_py.write(str_gsd)
                 f_py.write(", \"CREATE_OPTIONS\" : \'COMPRESS=LZW\'")
@@ -419,6 +423,10 @@ class Project:
                 f_bat.write("gdal_edit -a_srs \"{}\" \"".format(crs_str))
                 f_bat.write(gdp_raster_filepath)
                 f_bat.write("\"\n")
+                f_bat.write("gdal raster footprint --split-multipolygons")
+                f_bat.write(" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_filepath, gdp_raster_fp_filepath))
+                f_bat.write("\n")
                 # str_gdal_translate = ("gdal_translate -a_srs \"{}\" ".format(crs_str))
                 # str_gdal_translate += ("-ot uint32 -a_nodata 4294967295 -co compress=lzw ")
                 # str_gdal_translate += ("-scale 0 10000 0 1000000 -a_scale 0.01 ")
@@ -451,10 +459,12 @@ class Project:
                 QApplication.processEvents()
             progress.close()
             gdp_raster_filepath_by_id[gdp_id] = gdp_raster_filepath
+            gdp_raster_fp_filepath_by_id[gdp_id] = gdp_raster_fp_filepath
         # compute optimized raster DSM files
         dsm_commands = []
         dsm_commands_output_filepaths = []
         dsm_filepath_by_gdp_id_by_id = {}
+        dsm_fp_filepath_by_gdp_id_by_id = {}
         dsms_id_by_gdp_id_by_date = {}
         if computeForDsm:
             for gdp_id in self.geometric_design_projects:
@@ -464,11 +474,11 @@ class Project:
                     continue
                 gdp_file_basename = "gdp_" + gdp_id
                 gdp_crs = gdp[defs_gdp.FIELD_CRS]
-                gdp_gsd = gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]
-                gdp_min_x = gdp[defs_gdp.FIELD_MINIMUM_X]
-                gdp_max_x = gdp[defs_gdp.FIELD_MAXIMUM_X]
-                gdp_min_y = gdp[defs_gdp.FIELD_MINIMUM_Y]
-                gdp_max_y = gdp[defs_gdp.FIELD_MAXIMUM_Y]
+                gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+                gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+                gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+                gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+                gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
                 for phgmp_id in self.photogrammetry_projects:
                     phgmp = self.photogrammetry_projects[phgmp_id]
                     phgmp_enabled = phgmp[defs_ph_prjs_dlg.FIELD_ENABLED]
@@ -483,9 +493,11 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DSM + ".tif")
                     dsm_gdp_phgmp_file_path = os.path.join(output_path, dsm_gdp_phgmp_filename)
                     dsm_gdp_phgmp_file_path = os.path.normpath(dsm_gdp_phgmp_file_path)
+                    dsm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DSM + ".geojson")
+                    dsm_fp_gdp_phgmp_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_filename)
+                    dsm_fp_gdp_phgmp_file_path = os.path.normpath(dsm_fp_gdp_phgmp_file_path)
                     phgmp_dsm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
-                    if not gdp_id in dsms_id_by_gdp_id_by_date:
-                        dsms_id_by_gdp_id_by_date[gdp_id] = {}
                     if not phgmp_dsm_date in dsms_id_by_gdp_id_by_date[gdp_id]:
                         dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date] = []
                     dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date].append(phgmp_id)
@@ -493,15 +505,24 @@ class Project:
                         phgmp_dsm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DSM_CRS]
                         dsm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
                         dsm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
+                        dsm_command += (" -tr {:.3f} {:.3f}".format(gdp_gsd, gdp_gsd))
                         dsm_command += (" -s_srs {}".format(gdp_crs))
                         dsm_command += (" -t_srs {}".format(phgmp_dsm_crs))
                         dsm_command += ("  -co compress=lzw")
                         dsm_command += (" \"{}\" \"{}\"".format(phgmp_dsm_filepath, dsm_gdp_phgmp_file_path))
                         dsm_commands.append(dsm_command)
                         dsm_commands_output_filepaths.append(dsm_gdp_phgmp_file_path)
+                        dsm_fp_command = ("gdal raster footprint --split-multipolygons")
+                        dsm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                        dsm_fp_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path, dsm_fp_gdp_phgmp_file_path))
+                        dsm_commands.append(dsm_fp_command)
+                        dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
                     if not gdp_id in dsm_filepath_by_gdp_id_by_id:
                         dsm_filepath_by_gdp_id_by_id[gdp_id] = {}
                     dsm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_gdp_phgmp_file_path
+                    if not gdp_id in dsm_fp_filepath_by_gdp_id_by_id:
+                        dsm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dsm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_fp_gdp_phgmp_file_path
             if len(dsm_commands) > 0:
                 steps = len(dsm_commands)
                 progress = QProgressDialog("Computing optimized DSM files...", "Cancel", 0, steps)
@@ -560,6 +581,7 @@ class Project:
         dtm_commands = []
         dtm_commands_output_filepaths = []
         dtm_filepath_by_gdp_id_by_id = {}
+        dtm_fp_filepath_by_gdp_id_by_id = {}
         dtms_id_by_gdp_id_by_date = {}
         if computeForDtm:
             for gdp_id in self.geometric_design_projects:
@@ -569,11 +591,11 @@ class Project:
                     continue
                 gdp_file_basename = "gdp_" + gdp_id
                 gdp_crs = gdp[defs_gdp.FIELD_CRS]
-                gdp_gsd = gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION]
-                gdp_min_x = gdp[defs_gdp.FIELD_MINIMUM_X]
-                gdp_max_x = gdp[defs_gdp.FIELD_MAXIMUM_X]
-                gdp_min_y = gdp[defs_gdp.FIELD_MINIMUM_Y]
-                gdp_max_y = gdp[defs_gdp.FIELD_MAXIMUM_Y]
+                gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+                gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+                gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+                gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+                gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
                 for phgmp_id in self.photogrammetry_projects:
                     phgmp = self.photogrammetry_projects[phgmp_id]
                     phgmp_enabled = phgmp[defs_ph_prjs_dlg.FIELD_ENABLED]
@@ -588,6 +610,10 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DTM + ".tif")
                     dtm_gdp_phgmp_file_path = os.path.join(output_path, dtm_gdp_phgmp_filename)
                     dtm_gdp_phgmp_file_path = os.path.normpath(dtm_gdp_phgmp_file_path)
+                    dtm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DTM + ".geojson")
+                    dtm_fp_gdp_phgmp_file_path = os.path.join(output_path, dtm_fp_gdp_phgmp_filename)
+                    dtm_fp_gdp_phgmp_file_path = os.path.normpath(dtm_fp_gdp_phgmp_file_path)
                     phgmp_dtm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
                     if not gdp_id in dtms_id_by_gdp_id_by_date:
                         dtms_id_by_gdp_id_by_date[gdp_id] = {}
@@ -598,15 +624,24 @@ class Project:
                         phgmp_dtm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DTM_CRS]
                         dtm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
                         dtm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
+                        dtm_command += (" -tr {:.3f} {:.3f}".format(gdp_gsd, gdp_gsd))
                         dtm_command += (" -s_srs {}".format(gdp_crs))
                         dtm_command += (" -t_srs {}".format(phgmp_dtm_crs))
                         dtm_command += ("  -co compress=lzw")
                         dtm_command += (" \"{}\" \"{}\"".format(phgmp_dtm_filepath, dtm_gdp_phgmp_file_path))
                         dtm_commands.append(dtm_command)
                         dtm_commands_output_filepaths.append(dtm_gdp_phgmp_file_path)
+                        dtm_fp_command = ("gdal raster footprint --split-multipolygons")
+                        dtm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                        dtm_fp_command += (" \"{}\" \"{}\"".format(dtm_gdp_phgmp_file_path, dtm_fp_gdp_phgmp_file_path))
+                        dtm_commands.append(dtm_fp_command)
+                        dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
                     if not gdp_id in dtm_filepath_by_gdp_id_by_id:
                         dtm_filepath_by_gdp_id_by_id[gdp_id] = {}
                     dtm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_gdp_phgmp_file_path
+                    if not gdp_id in dtm_fp_filepath_by_gdp_id_by_id:
+                        dtm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dtm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dtm_fp_gdp_phgmp_file_path
             if len(dtm_commands) > 0:
                 steps = len(dtm_commands)
                 progress = QProgressDialog("Computing optimized DTM files...", "Cancel", 0, steps)
@@ -661,19 +696,99 @@ class Project:
                         os.remove(gdp_bat_filepath)
                 progress.close()
                 QApplication.processEvents()
+        volumes_computations = {}
+        volumes_computations_commands = []
         # compute dsm volumes
         if computeForDsm:
             for gdp_id in gdp_raster_filepath_by_id:
+                gdp = self.geometric_design_projects[gdp_id]
+                gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
+                if gdp_enabled == 0:
+                    continue
+                gdp_crs = gdp[defs_gdp.FIELD_CRS]
+                gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+                gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+                gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+                gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+                gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
                 gdp_raster_file_path = gdp_raster_filepath_by_id[gdp_id]
+                if not os.path.exists(gdp_raster_file_path): # never
+                    continue
+                gdp_raster_fp_file_path = gdp_raster_fp_filepath_by_id[gdp_id]
+                if not os.path.exists(gdp_raster_fp_file_path): # never
+                    continue
                 for str_date in dsms_id_by_gdp_id_by_date[gdp_id]:
-                    dtms_id = dsms_id_by_gdp_id_by_date[gdp_id][str_date]
+                    dsms_id = dsms_id_by_gdp_id_by_date[gdp_id][str_date]
+                    dsms_files_paths = []
+                    dsms_fp_files_paths = []
+                    for dsm_id in dsms_id:
+                        if not dsm_id in dsm_filepath_by_gdp_id_by_id[gdp_id]:
+                            continue
+                        if not dsm_id in dsm_fp_filepath_by_gdp_id_by_id[gdp_id]:
+                            continue
+                        dsm_file_path = dsm_filepath_by_gdp_id_by_id[gdp_id][dsm_id]
+                        if not os.path.exists(dsm_file_path):
+                            continue
+                        dsm_fp_file_path = dsm_fp_filepath_by_gdp_id_by_id[gdp_id][dsm_id]
+                        if not os.path.exists(dsm_fp_file_path):
+                            continue
+                        dsms_files_paths.append(dsm_file_path)
+                        dsms_fp_files_paths.append(dsm_fp_file_path)
+                    if len(dsms_files_paths) == 0:
+                        continue
+                    str_date_formated = str_date.replace(":", "")
+                    dsm_vrt_filename = (gdp_id + '_' + str_date_formated + '_'
+                                        + defs_ph_prjs_dlg.FIELD_DSM
+                                        + ".tif")
+                    dsm_vrt_file_path = os.path.join(output_path, dsm_vrt_filename)
+                    dsm_vrt_file_path = os.path.normpath(dsm_vrt_file_path)
+                    dsm_vol_filename = (gdp_id + '_' + str_date_formated + '_'
+                                        + defs_ph_prjs_dlg.FIELD_DSM + '_'
+                                        + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                        + ".tif")
+                    dsm_vol_file_path = os.path.join(output_path, dsm_vol_filename)
+                    dsm_vol_file_path = os.path.normpath(dsm_vol_file_path)
+                    dsm_vol_fp_filename = (gdp_id + '_' + str_date_formated + '_'
+                                        + defs_ph_prjs_dlg.FIELD_DSM + '_'
+                                        + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                        + ".geojson")
+                    dsm_vol_fp_path = os.path.join(output_path, dsm_vol_fp_filename)
+                    dsm_vol_fp_path = os.path.normpath(dsm_vol_fp_path)
+                    command_vrt = ("gdalbuildvrt \"{:.1f}\"".format(dsm_vrt_filename))
+                    for i in range(len(dsms_files_paths)):
+                        command_vrt += (" \"{}\"")
+                    volumes_computations_commands.append(command_vrt)
+                    command_calc = ("gdal_calc -A \"{:.1f}\"".format(gdp_raster_file_path))
+                    command_calc += (" -B \"{}\"".format(dsm_vrt_file_path))
+                    command_calc += (" --outfile=\"{}\"".format(dsm_vol_file_path))
+                    command_calc += (" --calc=\"A-B\" --co compress=lzw")
+                    command_fp = ("gdal raster footprint --split-multipolygons")
+                    command_fp += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                    command_fp += (" \"{}\" \"{}\"".format(dsm_vol_file_path, dsm_vol_fp_path))
+                    vc_id = gdp_id
+                    volume_computation = {}
+                    volume_computation[defs_vc.FIELD_ID] = vc_id
+                    volume_computation[defs_vc.FIELD_ENABLED] = 1
+                    volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date
+                    volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date
+                    volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DSM_DIFFERENCE
+                    volume_computation[defs_vc.FIELD_CRS] = gdp_crs
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dsm_vol_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dsm_vol_fp_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dsms_files_paths
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dsms_fp_files_paths
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
+                    volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
+                    volume_computation[defs_vc.FIELD_CONTENT] = ''
+                    volumes_computations[vc_id] = volume_computation
+
+
+
                     yo = 1
-        # compute volume raster DTM files
-        # gdp_raster_filepath_by_id = []
-        # dtm_commands_output_filepaths = []
         # dtm_filepath_by_gdp_id_by_id = {}
-        # dtms_id_by_gdp_id_by_date
-        # dsms_id_by_gdp_id_by_date
+        # dtm_fp_filepath_by_gdp_id_by_id = {}
+        # dtms_id_by_gdp_id_by_date = {}
         return str_error
 
     def project_definition_gui(self,

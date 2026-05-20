@@ -747,35 +747,42 @@ class Project:
                     if len(dsms_files_paths) == 0:
                         continue
                     str_date_formated = str_date.replace(":", "")
-                    dsm_vrt_filename = (gdp_id + '_' + str_date_formated + '_'
+                    dsm_vrt_filename = ("gdp_" + gdp_id + '_' + str_date_formated + '_'
                                         + defs_ph_prjs_dlg.FIELD_DSM
-                                        + ".tif")
+                                        + ".vrt")
                     dsm_vrt_file_path = os.path.join(output_path, dsm_vrt_filename)
                     dsm_vrt_file_path = os.path.normpath(dsm_vrt_file_path)
-                    dsm_vol_filename = (gdp_id + '_' + str_date_formated + '_'
+                    dsm_vol_filename = ("gdp_" + gdp_id + '_' + str_date_formated + '_'
                                         + defs_ph_prjs_dlg.FIELD_DSM + '_'
                                         + defs_vc.VOLUME_RASTER_FILE_SUFIX
                                         + ".tif")
                     dsm_vol_file_path = os.path.join(output_path, dsm_vol_filename)
                     dsm_vol_file_path = os.path.normpath(dsm_vol_file_path)
-                    dsm_vol_fp_filename = (gdp_id + '_' + str_date_formated + '_'
+                    dsm_vol_fp_filename = ("gdp_" + gdp_id + '_' + str_date_formated + '_'
                                         + defs_ph_prjs_dlg.FIELD_DSM + '_'
                                         + defs_vc.VOLUME_RASTER_FILE_SUFIX
                                         + ".geojson")
                     dsm_vol_fp_path = os.path.join(output_path, dsm_vol_fp_filename)
                     dsm_vol_fp_path = os.path.normpath(dsm_vol_fp_path)
-                    command_vrt = ("gdalbuildvrt \"{:.1f}\"".format(dsm_vrt_filename))
-                    for i in range(len(dsms_files_paths)):
-                        command_vrt += (" \"{}\"")
-                    volumes_computations_commands.append(command_vrt)
-                    command_calc = ("gdal_calc -A \"{:.1f}\"".format(gdp_raster_file_path))
-                    command_calc += (" -B \"{}\"".format(dsm_vrt_file_path))
-                    command_calc += (" --outfile=\"{}\"".format(dsm_vol_file_path))
-                    command_calc += (" --calc=\"A-B\" --co compress=lzw")
-                    command_fp = ("gdal raster footprint --split-multipolygons")
-                    command_fp += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
-                    command_fp += (" \"{}\" \"{}\"".format(dsm_vol_file_path, dsm_vol_fp_path))
-                    vc_id = gdp_id
+                    if not os.path.exists(dsm_vol_file_path) or not os.path.exists(dsm_vol_fp_path):
+                        if not os.path.exists(dsm_vol_file_path) or not os.path.exists(dsm_vol_fp_path):
+                            command_vrt = ("gdalbuildvrt \"{}\"".format(dsm_vrt_file_path))
+                            for i in range(len(dsms_files_paths)):
+                                command_vrt += (" \"{}\"".format(dsms_files_paths[i]))
+                            volumes_computations_commands.append(command_vrt)
+                            command_calc = ("gdal_calc -A \"{}\"".format(gdp_raster_file_path))
+                            command_calc += (" -B \"{}\"".format(dsm_vrt_file_path))
+                            command_calc += (" --outfile=\"{}\"".format(dsm_vol_file_path))
+                            command_calc += (" --calc=\"A-B\" --type=Float32 --NoDataValue=nan --co compress=lzw")
+                            volumes_computations_commands.append(command_calc)
+                        if not os.path.exists(dsm_vol_fp_path):
+                            command_fp = ("gdal raster footprint --split-multipolygons")
+                            command_fp += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                            command_fp += (" \"{}\" \"{}\"".format(dsm_vol_file_path, dsm_vol_fp_path))
+                            volumes_computations_commands.append(command_fp)
+                    vc_id = "gdp_" + gdp_id
+                    vc_id += "_" + defs_ph_prjs_dlg.FIELD_DSM
+                    vc_id += "_" + str_date_formated
                     volume_computation = {}
                     volume_computation[defs_vc.FIELD_ID] = vc_id
                     volume_computation[defs_vc.FIELD_ENABLED] = 1
@@ -790,12 +797,59 @@ class Project:
                     volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
                     volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
                     volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
-                    volume_computation[defs_vc.FIELD_CONTENT] = ''
+                    # volume_computation[defs_vc.FIELD_CONTENT] = ''
                     volumes_computations[vc_id] = volume_computation
 
 
 
                     yo = 1
+        if len(volumes_computations_commands) > 0:
+            steps = len(volumes_computations_commands)
+            progress = QProgressDialog("Computing volume files...", "Cancel", 0, steps)
+            # progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
+            progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
+            progress.setWindowTitle("Wait for finished")
+            progress.show()
+            i = 0
+            for command in volumes_computations_commands:
+                i = i + 1
+                progress.setValue(i)
+                if progress.wasCanceled():
+                    break
+                QApplication.processEvents()
+                cv_bat_filename = "Compute_Volume.bat"
+                cv_bat_filepath = os.path.join(output_path, cv_bat_filename)
+                cv_bat_filepath = os.path.normpath(cv_bat_filepath)
+                if os.path.exists(cv_bat_filepath):
+                    os.remove(cv_bat_filepath)
+                if os.path.exists(cv_bat_filepath):
+                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error += ("\nError removing existing BAT file:\n{}".format(cv_bat_filepath))
+                    progress.close()
+                    return str_error
+                # files_to_remove.append(gdp_bat_filepath)
+                f_bat = open(cv_bat_filepath, "w")
+                f_bat.write("@echo off\n")
+                f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                # windows
+                f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                # f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
+                f_bat.write("set PROCESS_PATH={}\n".format(output_path))
+                # f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
+                f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                # f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
+                f_bat.write("echo \"start\"\n")
+                f_bat.write(command)
+                f_bat.write("\n")
+                f_bat.write("echo \"end\"\n")
+                f_bat.close()
+                cv_command = cv_bat_filepath
+                result = subprocess.run([cv_command], capture_output=True, text=True)
+                if os.path.exists(cv_bat_filepath):
+                    os.remove(cv_bat_filepath)
+            progress.close()
+            QApplication.processEvents()
         # dtm_filepath_by_gdp_id_by_id = {}
         # dtm_fp_filepath_by_gdp_id_by_id = {}
         # dtms_id_by_gdp_id_by_date = {}

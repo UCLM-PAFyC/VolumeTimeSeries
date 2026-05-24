@@ -313,6 +313,9 @@ class Project:
             gdp_raster_filename = gdp_file_basename + ".tif"
             gdp_raster_filepath = os.path.join(output_path, gdp_raster_filename)
             gdp_raster_filepath = os.path.normpath(gdp_raster_filepath)
+            gdp_raster_fp_aux_filename = gdp_file_basename + "_aux.geojson"
+            gdp_raster_fp_aux_filepath = os.path.join(output_path, gdp_raster_fp_aux_filename)
+            gdp_raster_fp_aux_filepath = os.path.normpath(gdp_raster_fp_aux_filepath)
             gdp_raster_fp_filename = gdp_file_basename + ".geojson"
             gdp_raster_fp_filepath = os.path.join(output_path, gdp_raster_fp_filename)
             gdp_raster_fp_filepath = os.path.normpath(gdp_raster_fp_filepath)
@@ -379,13 +382,13 @@ class Project:
                 f_py.write("\'{:.1f},{:.1f},".format(gdp_min_x, gdp_max_x))
                 f_py.write("{:.1f},{:.1f}\', ".format(gdp_min_y, gdp_max_y))
                 f_py.write("\"INPUT\" : \'PLY:\"")
-                gdp_ply_filepath_str = gdp_ply_filepath.replace("\\", "\\\\")
-                f_py.write(gdp_ply_filepath_str)
+                # gdp_ply_filepath_str = gdp_ply_filepath.replace("\\", "\\\\")
+                f_py.write(gdp_ply_filepath.replace("\\", "\\\\"))
                 f_py.write("\"\', ")
                 f_py.write("\"OUTPUT\" : \"")
-                gdp_raster_aux_filepath = gdp_raster_aux_filepath.replace("\\", "\\\\")
-                gdp_raster_filepath = gdp_raster_filepath.replace("\\", "\\\\")
-                f_py.write(gdp_raster_aux_filepath)
+                # gdp_raster_aux_filepath = gdp_raster_aux_filepath.replace("\\", "\\\\")
+                # gdp_raster_filepath = gdp_raster_filepath.replace("\\", "\\\\")
+                f_py.write(gdp_raster_aux_filepath.replace("\\", "\\\\"))
                 # f_py.write(gdp_raster_qgis_filepath_str)
                 f_py.write("\", ")
                 str_gsd = ("{:.3f}".format(gdp_gsd))
@@ -434,12 +437,22 @@ class Project:
                 f_bat.write("\"\n")
                 f_bat.write("del \"")
                 f_bat.write(gdp_raster_aux_filepath)
+                # f_bat.write(gdp_raster_aux_filepath.replace("\\\\","\\"))
                 f_bat.write("\" /Q\n")
                 # gdal raster contour --overwrite --levels MIN,MAX --polygonize gdp_1_20250507_DSM_vol.tif gdp_1_20250507_DSM_vol.geojson
                 f_bat.write("gdal raster contour --levels MIN,MAX --polygonize")
-                f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_filepath, gdp_raster_fp_filepath))
+                f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_filepath, gdp_raster_fp_aux_filepath))
                 f_bat.write("\n")
-
+                # f_bat.write("gdal vector dissolve")
+                # f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_fp_aux_filepath, gdp_raster_fp_filepath))
+                # f_bat.write("\n")
+                f_bat.write("ogr2ogr")
+                f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_fp_filepath, gdp_raster_fp_aux_filepath)) # first output
+                f_bat.write(" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"\n".format(gdp_gsd))
+                f_bat.write("del \"")
+                f_bat.write(gdp_raster_fp_aux_filepath)
+                # f_bat.write(gdp_raster_fp_aux_filepath.replace("\\\\","\\"))
+                f_bat.write("\" /Q\n")
                 # f_bat.write("gdal raster footprint --split-multipolygons")
                 # f_bat.write(" --simplify-tolerance {:.3f}".format(gdp_gsd))
                 # f_bat.write(" \"{}\" \"{}\"".format(gdp_raster_filepath, gdp_raster_fp_filepath))
@@ -478,130 +491,146 @@ class Project:
             progress.close()
             gdp_raster_filepath_by_id[gdp_id] = gdp_raster_filepath
             gdp_raster_fp_filepath_by_id[gdp_id] = gdp_raster_fp_filepath
-        yo = 1
-        # # compute optimized raster DSM files
-        # dsm_commands = []
-        # dsm_commands_output_filepaths = []
-        # dsm_filepath_by_gdp_id_by_id = {}
-        # dsm_fp_filepath_by_gdp_id_by_id = {}
-        # dsms_id_by_gdp_id_by_date = {}
-        # if computeForDsm:
-        #     for gdp_id in self.geometric_design_projects:
-        #         gdp = self.geometric_design_projects[gdp_id]
-        #         gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
-        #         if gdp_enabled == 0:
-        #             continue
-        #         gdp_file_basename = "gdp_" + gdp_id
-        #         gdp_crs = gdp[defs_gdp.FIELD_CRS]
-        #         gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
-        #         gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
-        #         gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
-        #         gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
-        #         gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
-        #         for phgmp_id in self.photogrammetry_projects:
-        #             phgmp = self.photogrammetry_projects[phgmp_id]
-        #             phgmp_enabled = phgmp[defs_ph_prjs_dlg.FIELD_ENABLED]
-        #             if phgmp_enabled == 0:
-        #                 continue
-        #             phgmp_dsm_filepath = phgmp[defs_ph_prjs_dlg.FIELD_DSM]
-        #             if not phgmp_dsm_filepath:
-        #                 continue
-        #             if not os.path.exists(phgmp_dsm_filepath):
-        #                 continue
-        #             dsm_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
-        #                                       + defs_ph_prjs_dlg.FIELD_DSM + ".tif")
-        #             dsm_gdp_phgmp_file_path = os.path.join(output_path, dsm_gdp_phgmp_filename)
-        #             dsm_gdp_phgmp_file_path = os.path.normpath(dsm_gdp_phgmp_file_path)
-        #             dsm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
-        #                                       + defs_ph_prjs_dlg.FIELD_DSM + ".geojson")
-        #             dsm_fp_gdp_phgmp_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_filename)
-        #             dsm_fp_gdp_phgmp_file_path = os.path.normpath(dsm_fp_gdp_phgmp_file_path)
-        #             phgmp_dsm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
-        #             if not gdp_id in dsms_id_by_gdp_id_by_date:
-        #                 dsms_id_by_gdp_id_by_date[gdp_id] = {}
-        #             if not phgmp_dsm_date in dsms_id_by_gdp_id_by_date[gdp_id]:
-        #                 dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date] = []
-        #             dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date].append(phgmp_id)
-        #             if not gdp_id in dsm_filepath_by_gdp_id_by_id:
-        #                 dsm_filepath_by_gdp_id_by_id[gdp_id] = {}
-        #             dsm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_gdp_phgmp_file_path
-        #             if not gdp_id in dsm_fp_filepath_by_gdp_id_by_id:
-        #                 dsm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
-        #             dsm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_fp_gdp_phgmp_file_path
-        #             if not os.path.exists(dsm_gdp_phgmp_file_path) or not os.path.exists(dsm_fp_gdp_phgmp_file_path):
-        #                 if os.path.exists(dsm_gdp_phgmp_file_path):
-        #                     os.remove(dsm_gdp_phgmp_file_path)
-        #                 if os.path.exists(dsm_fp_gdp_phgmp_file_path):
-        #                     os.remove(dsm_fp_gdp_phgmp_file_path)
-        #                 phgmp_dsm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DSM_CRS]
-        #                 dsm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
-        #                 dsm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
-        #                 dsm_command += (" -tr {:.3f} {:.3f}".format(gdp_gsd, gdp_gsd))
-        #                 dsm_command += (" -s_srs {}".format(gdp_crs))
-        #                 dsm_command += (" -t_srs {}".format(phgmp_dsm_crs))
-        #                 dsm_command += ("  -co compress=lzw")
-        #                 dsm_command += (" \"{}\" \"{}\"".format(phgmp_dsm_filepath, dsm_gdp_phgmp_file_path))
-        #                 dsm_commands.append(dsm_command)
-        #                 dsm_commands_output_filepaths.append(dsm_gdp_phgmp_file_path)
-        #                 dsm_fp_command = ("gdal raster footprint --split-multipolygons")
-        #                 dsm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
-        #                 dsm_fp_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path, dsm_fp_gdp_phgmp_file_path))
-        #                 dsm_commands.append(dsm_fp_command)
-        #                 dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
-        #     if len(dsm_commands) > 0:
-        #         steps = len(dsm_commands)
-        #         progress = QProgressDialog("Computing optimized DSM files...", "Cancel", 0, steps)
-        #         # progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
-        #         progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
-        #         progress.setWindowTitle("Wait for finished")
-        #         progress.show()
-        #         i = 0
-        #         for dsm_command in dsm_commands:
-        #             output_filepath = dsm_commands_output_filepaths[i]
-        #             i = i + 1
-        #             progress.setValue(i)
-        #             if progress.wasCanceled():
-        #                 break
-        #             QApplication.processEvents()
-        #             gdp_bat_filename = "Optimize_DSM.bat"
-        #             gdp_bat_filepath = os.path.join(output_path, gdp_bat_filename)
-        #             gdp_bat_filepath = os.path.normpath(gdp_bat_filepath)
-        #             if os.path.exists(gdp_bat_filepath):
-        #                 os.remove(gdp_bat_filepath)
-        #             if os.path.exists(gdp_bat_filepath):
-        #                 str_error = Project.__name__ + "." + self.save_to_json.__name__
-        #                 str_error += ("\nError removing existing BAT file:\n{}".format(gdp_bat_filepath))
-        #                 progress.close()
-        #                 return str_error
-        #             # files_to_remove.append(gdp_bat_filepath)
-        #             f_bat = open(gdp_bat_filepath, "w")
-        #             f_bat.write("@echo off\n")
-        #             f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
-        #             # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
-        #             # windows
-        #             f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
-        #             # f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
-        #             f_bat.write("set PROCESS_PATH={}\n".format(output_path))
-        #             # f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
-        #             f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
-        #             # f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
-        #             f_bat.write("echo \"start\"\n")
-        #             f_bat.write(dsm_command)
-        #             f_bat.write("\n")
-        #             f_bat.write("echo \"end\"\n")
-        #             f_bat.close()
-        #             command = gdp_bat_filepath
-        #             result = subprocess.run([command], capture_output=True, text=True)
-        #             # os.system(command)
-        #             # if not os.path.exists(gdp_raster_qgis_filepath):
-        #             if not os.path.exists(output_filepath):
-        #                 msg_error = Project.__name__ + "." + self.save_to_json.__name__
-        #                 msg_error += ("\nSomething fails computing optimized DSM:\n{}".format(output_filepath))
-        #                 error_msgs.append(msg_error)
-        #             if os.path.exists(gdp_bat_filepath):
-        #                 os.remove(gdp_bat_filepath)
-        #         progress.close()
-        #         QApplication.processEvents()
+        # compute optimized raster DSM files
+        dsm_commands = []
+        dsm_commands_output_filepaths = []
+        dsm_filepath_by_gdp_id_by_id = {}
+        dsm_fp_filepath_by_gdp_id_by_id = {}
+        dsms_id_by_gdp_id_by_date = {}
+        if computeForDsm:
+            for gdp_id in self.geometric_design_projects:
+                gdp = self.geometric_design_projects[gdp_id]
+                gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
+                if gdp_enabled == 0:
+                    continue
+                gdp_file_basename = "gdp_" + gdp_id
+                gdp_crs = gdp[defs_gdp.FIELD_CRS]
+                gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+                gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+                gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+                gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+                gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
+                for phgmp_id in self.photogrammetry_projects:
+                    phgmp = self.photogrammetry_projects[phgmp_id]
+                    phgmp_enabled = phgmp[defs_ph_prjs_dlg.FIELD_ENABLED]
+                    if phgmp_enabled == 0:
+                        continue
+                    phgmp_dsm_filepath = phgmp[defs_ph_prjs_dlg.FIELD_DSM]
+                    if not phgmp_dsm_filepath:
+                        continue
+                    if not os.path.exists(phgmp_dsm_filepath):
+                        continue
+                    dsm_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DSM + ".tif")
+                    dsm_gdp_phgmp_file_path = os.path.join(output_path, dsm_gdp_phgmp_filename)
+                    dsm_gdp_phgmp_file_path = os.path.normpath(dsm_gdp_phgmp_file_path)
+                    dsm_fp_gdp_phgmp_aux_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DSM + "_aux.geojson")
+                    dsm_fp_gdp_phgmp_aux_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_aux_filename)
+                    dsm_fp_gdp_phgmp_aux_file_path = os.path.normpath(dsm_fp_gdp_phgmp_aux_file_path)
+                    dsm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DSM + ".geojson")
+                    dsm_fp_gdp_phgmp_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_filename)
+                    dsm_fp_gdp_phgmp_file_path = os.path.normpath(dsm_fp_gdp_phgmp_file_path)
+                    phgmp_dsm_date = phgmp[defs_ph_prjs_dlg.FIELD_DATE]
+                    if not gdp_id in dsms_id_by_gdp_id_by_date:
+                        dsms_id_by_gdp_id_by_date[gdp_id] = {}
+                    if not phgmp_dsm_date in dsms_id_by_gdp_id_by_date[gdp_id]:
+                        dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date] = []
+                    dsms_id_by_gdp_id_by_date[gdp_id][phgmp_dsm_date].append(phgmp_id)
+                    if not gdp_id in dsm_filepath_by_gdp_id_by_id:
+                        dsm_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dsm_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_gdp_phgmp_file_path
+                    if not gdp_id in dsm_fp_filepath_by_gdp_id_by_id:
+                        dsm_fp_filepath_by_gdp_id_by_id[gdp_id] = {}
+                    dsm_fp_filepath_by_gdp_id_by_id[gdp_id][phgmp_id] = dsm_fp_gdp_phgmp_file_path
+                    if not os.path.exists(dsm_gdp_phgmp_file_path) or not os.path.exists(dsm_fp_gdp_phgmp_file_path):
+                        if os.path.exists(dsm_gdp_phgmp_file_path):
+                            os.remove(dsm_gdp_phgmp_file_path)
+                        if os.path.exists(dsm_fp_gdp_phgmp_file_path):
+                            os.remove(dsm_fp_gdp_phgmp_file_path)
+                        phgmp_dsm_crs = phgmp[defs_ph_prjs_dlg.FIELD_DSM_CRS]
+                        dsm_command = ("gdalwarp -ot Float32 -te {:.1f} {:.1f}".format(gdp_min_x, gdp_min_y))
+                        dsm_command += (" {:.1f} {:.1f}".format(gdp_max_x, gdp_max_y))
+                        dsm_command += (" -tr {:.3f} {:.3f}".format(gdp_gsd, gdp_gsd))
+                        dsm_command += (" -s_srs {}".format(gdp_crs))
+                        dsm_command += (" -t_srs {}".format(phgmp_dsm_crs))
+                        dsm_command += (" -dstnodata -9999 -co compress=lzw")
+                        dsm_command += (" \"{}\" \"{}\"".format(phgmp_dsm_filepath, dsm_gdp_phgmp_file_path))
+                        dsm_commands.append(dsm_command)
+                        dsm_commands_output_filepaths.append(dsm_gdp_phgmp_file_path)
+                        dsm_fp_1_command = ("gdal raster contour --levels MIN,MAX --polygonize ");
+                        dsm_fp_1_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path,
+                                                                     dsm_fp_gdp_phgmp_aux_file_path))
+                        dsm_commands.append(dsm_fp_1_command)
+                        dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_aux_file_path)
+                        dsm_fp_2_command = ("ogr2ogr  \"{}\" \"{}\"".format(dsm_fp_gdp_phgmp_file_path,
+                                                                     dsm_fp_gdp_phgmp_aux_file_path))
+                        dsm_fp_2_command += (" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(gdp_gsd))
+                        dsm_commands.append(dsm_fp_2_command)
+                        dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
+                        dsm_fp_3_command = ("del \"{}\" /Q".format(dsm_fp_gdp_phgmp_aux_file_path))
+                        dsm_commands.append(dsm_fp_3_command)
+                        dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path) # for equal indexes
+                        # dsm_fp_command = ("gdal raster footprint --split-multipolygons")
+                        # dsm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
+                        # dsm_fp_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path, dsm_fp_gdp_phgmp_file_path))
+                        # dsm_commands.append(dsm_fp_command)
+                        # dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
+            if len(dsm_commands) > 0:
+                steps = len(dsm_commands)
+                progress = QProgressDialog("Computing optimized DSM files...", "Cancel", 0, steps)
+                # progress = QProgressDialog("Computing raster for geometric design projects...", "Cancel", 0, steps)
+                progress.setWindowModality(Qt.WindowModal)  # Bloquea la ventana principal
+                progress.setWindowTitle("Wait for finished")
+                progress.show()
+                i = 0
+                for dsm_command in dsm_commands:
+                    output_filepath = dsm_commands_output_filepaths[i]
+                    i = i + 1
+                    progress.setValue(i)
+                    if progress.wasCanceled():
+                        break
+                    QApplication.processEvents()
+                    gdp_bat_filename = "Optimize_DSM.bat"
+                    gdp_bat_filepath = os.path.join(output_path, gdp_bat_filename)
+                    gdp_bat_filepath = os.path.normpath(gdp_bat_filepath)
+                    if os.path.exists(gdp_bat_filepath):
+                        os.remove(gdp_bat_filepath)
+                    if os.path.exists(gdp_bat_filepath):
+                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error += ("\nError removing existing BAT file:\n{}".format(gdp_bat_filepath))
+                        progress.close()
+                        return str_error
+                    # files_to_remove.append(gdp_bat_filepath)
+                    f_bat = open(gdp_bat_filepath, "w")
+                    f_bat.write("@echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    # f_bat.write("call \"%OSGEO4W_ROOT%\\bin\\o4w_env.bat\"\n")
+                    f_bat.write("set PROCESS_PATH={}\n".format(output_path))
+                    # f_bat.write("set PROCESS_PATH=D:/master_co2/tafalla/qVolumeTimeSeriesProjects/output\n")
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    # f_bat.write("set PATH=%OSGEO4W_ROOT%\\bin;%OSGEO4W_ROOT%\\apps\qgis-ltr\\bin;%PATH%\n")
+                    f_bat.write("echo \"start\"\n")
+                    f_bat.write(dsm_command)
+                    f_bat.write("\n")
+                    f_bat.write("echo \"end\"\n")
+                    f_bat.close()
+                    command = gdp_bat_filepath
+                    result = subprocess.run([command], capture_output=True, text=True)
+                    # os.system(command)
+                    # if not os.path.exists(gdp_raster_qgis_filepath):
+                    if not os.path.exists(output_filepath):
+                        msg_error = Project.__name__ + "." + self.save_to_json.__name__
+                        msg_error += ("\nSomething fails computing optimized DSM:\n{}".format(output_filepath))
+                        error_msgs.append(msg_error)
+                    if os.path.exists(gdp_bat_filepath):
+                        os.remove(gdp_bat_filepath)
+                progress.close()
+                QApplication.processEvents()
         # # compute optimized raster DTM files
         # dtm_commands = []
         # dtm_commands_output_filepaths = []

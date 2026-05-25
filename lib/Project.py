@@ -973,7 +973,7 @@ class Project:
                             volume_computation = {}
                             volume_computation[defs_vc.FIELD_ID] = vc_id
                             volume_computation[defs_vc.FIELD_ENABLED] = 1
-                            volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_dates_as_list[i - 1]
+                            volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_dates_as_list[j]
                             volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_dates_as_list[i]
                             volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_DSMS_DIFFERENCE
                             volume_computation[defs_vc.FIELD_CRS] = gdp_crs

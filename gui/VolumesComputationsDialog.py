@@ -94,8 +94,7 @@ class VolumesComputationsDialog(QDialog):
         self.computeForDsmCheckBox.setChecked(True)
         self.computeForGeometricDesignsCheckBox.setChecked(True)
         self.computeForGeometricDesignsCheckBox.setEnabled(False)
-        self.computeFromFirstDateCheckBox.setChecked(True)
-        self.computeFromPreviousDateCheckBox.setChecked(True)
+        self.computeFromPreviousDatesCheckBox.setChecked(True)
         self.savePushButton.clicked.connect(self.save)
         self.qgisPathPushButton.clicked.connect(self.select_qgis_path)
         self.tableWidget.itemDoubleClicked.connect(self.on_click)
@@ -151,13 +150,11 @@ class VolumesComputationsDialog(QDialog):
         computeForDtm = self.computeForDtmCheckBox.isChecked()
         computeForDsm = self.computeForDsmCheckBox.isChecked()
         computeForGeometricDesigns = self.computeForGeometricDesignsCheckBox.isChecked()
-        computeFromFirstDate = self.computeFromFirstDateCheckBox.isChecked()
-        computeFromPreviousDate = self.computeFromPreviousDateCheckBox.isChecked()
+        computeFromPreviousDates = self.computeFromPreviousDatesCheckBox.isChecked()
         str_aux_error = self.project.processVolumesComputations(computeForDtm,
                                                                 computeForDsm,
                                                                 computeForGeometricDesigns,
-                                                                computeFromFirstDate,
-                                                                computeFromPreviousDate)
+                                                                computeFromPreviousDates)
         if str_aux_error:
             str_error = ('Error processing volumes computations:\n{}'.
                          format(str_aux_error))

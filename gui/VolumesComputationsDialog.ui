@@ -87,19 +87,9 @@
       </spacer>
      </item>
      <item>
-      <widget class="QCheckBox" name="computeFromFirstDateCheckBox">
+      <widget class="QCheckBox" name="computeFromPreviousDatesCheckBox">
        <property name="text">
-        <string>Compute from first date</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QCheckBox" name="computeFromPreviousDateCheckBox">
-       <property name="text">
-        <string>Compute from previous date</string>
+        <string>Compute from previous dates</string>
        </property>
        <property name="checked">
         <bool>true</bool>

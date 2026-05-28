@@ -11,6 +11,8 @@ from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
 common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
 sys.path.append(common_libs_absolute_path)
 
+from pyLibGDAL import defs_gdal
+
 DIALOG_TITLE = "Volumes Computations"
 # CONST_NO_COMBO_SELECT = " ... "
 # CONST_NO_COMBO_SELECT = " ... "
@@ -96,8 +98,12 @@ header_tooltips = [HEADER_ID_TAG, HEADER_ENABLED_TOOLTIP,
 
 VOLUME_RASTER_FILE_SUFIX = "vol"
 
-JSON_FP_FIELD_FEATURES = "features"
-JSON_FP_FIELD_FEATURES_GEOMETRY = "geometry"
+GEOJSON_FP_LAYER_NAME = "contour"
+GEOJSON_FP_FIELD_FEATURES = "features"
+GEOJSON_FP_FIELD_FEATURES_GEOMETRY = "geometry"
+geojson_fp_fields = {}
+geojson_fp_fields[GEOJSON_FP_FIELD_FEATURES_GEOMETRY] = defs_gdal.geometry_type_by_name['polygon']
+
 # JSON_FP_FIELD_FEATURES_GEOMETRY_NULL = null
 
 

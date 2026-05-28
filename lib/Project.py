@@ -998,9 +998,9 @@ class Project:
                     # volume_computation[defs_vc.FIELD_CONTENT] = ''
                     volumes_computations[vc_id] = volume_computation
                 # uav to uav
-                phgmp_ids_as_list = list(dsm_filepath_by_gdp_id_by_id.keys())
+                phgmp_ids_as_list = list(dsm_filepath_by_gdp_id_by_id[gdp_id].keys())
                 for i in range(len(phgmp_ids_as_list) - 1):
-                    dsm_first_id = dsm_filepath_by_gdp_id_by_id[i]
+                    dsm_first_id = phgmp_ids_as_list[i]
                     dsm_first_file_path = dsm_filepath_by_gdp_id_by_id[gdp_id][dsm_first_id]
                     if not os.path.exists(dsm_first_file_path):
                         continue
@@ -1011,9 +1011,9 @@ class Project:
                         continue
                     dsm_first_fp_geometry = dsm_fp_geometry_by_gdp_id_by_id[gdp_id][dsm_first_id]
                     str_first_date = self.photogrammetry_projects[dsm_first_id][defs_ph_prjs_dlg.FIELD_DATE]
-                    str_first_date_formated = str_date.replace(':', '')
+                    str_first_date_formated = str_first_date.replace(':', '')
                     for j in range(i + 1, len(phgmp_ids_as_list)):
-                        dsm_second_id = dsm_filepath_by_gdp_id_by_id[i]
+                        dsm_second_id = phgmp_ids_as_list[j]
                         dsm_second_file_path = dsm_filepath_by_gdp_id_by_id[gdp_id][dsm_second_id]
                         if not os.path.exists(dsm_second_file_path):
                             continue
@@ -1029,43 +1029,53 @@ class Project:
                                 and not dsm_first_fp_geometry.Within(dsm_second_fp_geometry)):
                             continue
                         str_second_date = self.photogrammetry_projects[dsm_second_id][defs_ph_prjs_dlg.FIELD_DATE]
-                        str_second_date_formated = str_date.replace(':', '')
+                        str_second_date_formated = str_second_date.replace(':', '')
+                        str_date_from = str_first_date
+                        str_date_to = str_second_date
+                        str_date_from_formated = str_first_date_formated
+                        str_date_to_formated = str_second_date_formated
+                        dsm_from_id = dsm_first_id
+                        dsm_to_id = dsm_second_id
+                        dsm_from_file_path = dsm_first_file_path
+                        dsm_to_file_path = dsm_second_file_path
+                        if str_first_date_formated > str_second_date_formated:
+                            str_date_from = str_second_date
+                            str_date_to = str_first_date
+                            str_date_from_formated = str_second_date_formated
+                            str_date_to_formated = str_first_date_formated
+                            dsm_from_id = dsm_second_id
+                            dsm_to_id = dsm_first_id
+                            dsm_from_file_path = dsm_second_file_path
+                            dsm_to_file_path = dsm_first_file_path
                         dsm_vol_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
-                                            + dsm_first_id + '_'
-                                            + dsm_second_id + '_'
+                                            + dsm_from_id + '_'
+                                            + dsm_to_id + '_'
                                             + defs_ph_prjs_dlg.FIELD_DSM + '_'
                                             + defs_vc.VOLUME_RASTER_FILE_SUFIX
                                             + ".tif")
                         dsm_vol_file_path = os.path.join(output_path, dsm_vol_filename)
                         dsm_vol_file_path = os.path.normpath(dsm_vol_file_path)
                         dsm_vol_fp_aux_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
-                                                   + dsm_first_id + '_'
-                                                   + dsm_second_id + '_'
+                                                   + dsm_from_id + '_'
+                                                   + dsm_to_id + '_'
                                                    + defs_ph_prjs_dlg.FIELD_DSM + '_'
                                                    + defs_vc.VOLUME_RASTER_FILE_SUFIX
                                                    + "_aux.geojson")
                         dsm_vol_fp_aux_file_path = os.path.join(output_path, dsm_vol_fp_aux_filename)
                         dsm_vol_fp_aux_file_path = os.path.normpath(dsm_vol_fp_aux_file_path)
                         dsm_vol_fp_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
-                                               + dsm_first_id + '_'
-                                               + dsm_second_id + '_'
+                                               + dsm_from_id + '_'
+                                               + dsm_to_id + '_'
                                                + defs_ph_prjs_dlg.FIELD_DSM + '_'
                                                + defs_vc.VOLUME_RASTER_FILE_SUFIX
                                                + ".geojson")
                         dsm_vol_fp_file_path = os.path.join(output_path, dsm_vol_fp_filename)
                         dsm_vol_fp_file_path = os.path.normpath(dsm_vol_fp_file_path)
-                        str_date_from_formated = str_first_date_formated
-                        str_date_to_formated = str_second_date_formated
-                        dsm_from_file_path = dsm_first_file_path
-                        dsm_to_file_path = dsm_second_file_path
-                        if str_second_date_formated < str_second_date_formated:
-                            dsm_from_file_path = dsm_first_file_path
-                            dsm_to_file_path = dsm_second_file_path
                         if not os.path.exists(dsm_vol_file_path):
                             if os.path.exists(dsm_vol_fp_file_path):
                                 os.remove(dsm_vol_fp_file_path)
-                            command_calc = ("gdal_calc -A \"{}\"".format(gdp_raster_file_path))
-                            command_calc += (" -B \"{}\"".format(dsm_first_file_path))
+                            command_calc = ("gdal_calc -A \"{}\"".format(dsm_to_file_path))
+                            command_calc += (" -B \"{}\"".format(dsm_from_file_path))
                             command_calc += (" --outfile=\"{}\"".format(dsm_vol_file_path))
                             command_calc += (" --calc=\"A-B\" --NoDataValue -9999 --type=Float32 --co \"COMPRESS=LZW\"")
                             volumes_computations_commands.append(command_calc)
@@ -1083,19 +1093,20 @@ class Project:
                             command_fp_3_command = ("del \"{}\" /Q".format(dsm_vol_fp_aux_file_path))
                             volumes_computations_commands.append(command_fp_3_command)
                         vc_id = "gdp_" + gdp_id
-                        vc_id += "_" + str_date_formated
+                        vc_id += "_" + str_date_from_formated
+                        vc_id += "_" + str_date_to_formated
                         vc_id += "_" + defs_ph_prjs_dlg.FIELD_DSM
                         volume_computation = {}
                         volume_computation[defs_vc.FIELD_ID] = vc_id
                         volume_computation[defs_vc.FIELD_ENABLED] = 1
-                        volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date
-                        volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date
+                        volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
+                        volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
                         volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DSM_DIFFERENCE
                         volume_computation[defs_vc.FIELD_CRS] = gdp_crs
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dsm_vol_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dsm_vol_fp_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dsm_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dsm_fp_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dsm_from_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dsm_to_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
                         volume_computation[defs_vc.FIELD_DESCRIPTION] = ''

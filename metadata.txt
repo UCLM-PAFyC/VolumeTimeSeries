@@ -9,6 +9,7 @@
 [general]
 name=qVolumeTimeSeries
 qgisMinimumVersion=3.40.10
+qgisMaximumVersion=3.40.10
 description=A plugin for Volume Time Series
 version=0.1
 author=David Hernandez Lopez, Universidad de Castilla-La Mancha

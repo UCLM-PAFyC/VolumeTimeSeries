@@ -1112,8 +1112,226 @@ class Project:
                         volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
                         # volume_computation[defs_vc.FIELD_CONTENT] = ''
                         volumes_computations[vc_id] = volume_computation
-
-
+        # compute dtm volumes
+        if computeForDtm:
+            for gdp_id in gdp_raster_filepath_by_id:
+                gdp = self.geometric_design_projects[gdp_id]
+                gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
+                if gdp_enabled == 0:
+                    continue
+                gdp_crs = gdp[defs_gdp.FIELD_CRS]
+                gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+                gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+                gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+                gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+                gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
+                gdp_raster_file_path = gdp_raster_filepath_by_id[gdp_id]
+                if not os.path.exists(gdp_raster_file_path): # never
+                    continue
+                gdp_raster_fp_file_path = gdp_raster_fp_filepath_by_id[gdp_id]
+                if not os.path.exists(gdp_raster_fp_file_path): # never
+                    continue
+                if not gdp_id in gdp_raster_fp_geometry_by_id: # never
+                    continue
+                gdp_raster_fp_geometry = gdp_raster_fp_geometry_by_id[gdp_id]
+                if not gdp_id in dtm_filepath_by_gdp_id_by_id or not gdp_id in dtm_fp_filepath_by_gdp_id_by_id:
+                    continue
+                for phgmp_id in dtm_fp_filepath_by_gdp_id_by_id[gdp_id]:
+                    dtm_id = phgmp_id
+                    dtm_file_path = dtm_filepath_by_gdp_id_by_id[gdp_id][dtm_id]
+                    if not os.path.exists(dtm_file_path):
+                        continue
+                    dtm_fp_file_path = dtm_fp_filepath_by_gdp_id_by_id[gdp_id][dtm_id]
+                    if not os.path.exists(dtm_fp_file_path):
+                        continue
+                    if not gdp_id in dtm_fp_geometry_by_gdp_id_by_id:  # never
+                        continue
+                    if not dtm_id in dtm_fp_geometry_by_gdp_id_by_id[gdp_id]:
+                        continue
+                    dtm_fp_geometry = dtm_fp_geometry_by_gdp_id_by_id[gdp_id][dtm_id]
+                    # check exists overlaps
+                    if (not gdp_raster_fp_geometry.Intersects(dtm_fp_geometry)
+                            and not gdp_raster_fp_geometry.Within(dtm_fp_geometry)
+                            and not gdp_raster_fp_geometry.Within(dtm_fp_geometry)):
+                        continue
+                    str_date = self.photogrammetry_projects[dtm_id][defs_ph_prjs_dlg.FIELD_DATE]
+                    str_date_formated = str_date.replace(':','')
+                    dtm_vol_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                        + dtm_id + '_'
+                                        + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                        + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                        + ".tif")
+                    dtm_vol_file_path = os.path.join(output_path, dtm_vol_filename)
+                    dtm_vol_file_path = os.path.normpath(dtm_vol_file_path)
+                    dtm_vol_fp_aux_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                               + dtm_id + '_'
+                                               + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                               + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                               + "_aux.geojson")
+                    dtm_vol_fp_aux_file_path = os.path.join(output_path, dtm_vol_fp_aux_filename)
+                    dtm_vol_fp_aux_file_path = os.path.normpath(dtm_vol_fp_aux_file_path)
+                    dtm_vol_fp_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                           + dtm_id + '_'
+                                           + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                           + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                           + ".geojson")
+                    dtm_vol_fp_file_path = os.path.join(output_path, dtm_vol_fp_filename)
+                    dtm_vol_fp_file_path = os.path.normpath(dtm_vol_fp_file_path)
+                    if not os.path.exists(dtm_vol_file_path):
+                        if os.path.exists(dtm_vol_fp_file_path):
+                            os.remove(dtm_vol_fp_file_path)
+                        command_calc = ("gdal_calc -A \"{}\"".format(gdp_raster_file_path))
+                        command_calc += (" -B \"{}\"".format(dtm_file_path))
+                        command_calc += (" --outfile=\"{}\"".format(dtm_vol_file_path))
+                        command_calc += (" --calc=\"A-B\" --NoDataValue -9999 --type=Float32 --co \"COMPRESS=LZW\"")
+                        volumes_computations_commands.append(command_calc)
+                    if not os.path.exists(dtm_vol_fp_file_path):
+                        commmand_fp_1_command = ("gdal raster contour --levels MIN,MAX --polygonize ");
+                        commmand_fp_1_command += (" \"{}\" \"{}\"".format(dtm_vol_file_path,
+                                                                          dtm_vol_fp_aux_file_path))
+                        volumes_computations_commands.append(commmand_fp_1_command)
+                        commmand_fp_2_command = ("ogr2ogr  \"{}\" \"{}\"".format(dtm_vol_fp_file_path,
+                                                                                 dtm_vol_fp_aux_file_path))
+                        commmand_fp_2_command += (
+                            " -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(
+                                gdp_gsd))
+                        volumes_computations_commands.append(commmand_fp_2_command)
+                        command_fp_3_command = ("del \"{}\" /Q".format(dtm_vol_fp_aux_file_path))
+                        volumes_computations_commands.append(command_fp_3_command)
+                    vc_id = "gdp_" + gdp_id
+                    vc_id += "_" + str_date_formated
+                    vc_id += "_" + defs_ph_prjs_dlg.FIELD_DTM
+                    volume_computation = {}
+                    volume_computation[defs_vc.FIELD_ID] = vc_id
+                    volume_computation[defs_vc.FIELD_ENABLED] = 1
+                    volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date
+                    volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date
+                    volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DTM_DIFFERENCE
+                    volume_computation[defs_vc.FIELD_CRS] = gdp_crs
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dtm_vol_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dtm_vol_fp_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dtm_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dtm_fp_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
+                    volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
+                    volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
+                    # volume_computation[defs_vc.FIELD_CONTENT] = ''
+                    volumes_computations[vc_id] = volume_computation
+                # uav to uav
+                phgmp_ids_as_list = list(dtm_filepath_by_gdp_id_by_id[gdp_id].keys())
+                for i in range(len(phgmp_ids_as_list) - 1):
+                    dtm_first_id = phgmp_ids_as_list[i]
+                    dtm_first_file_path = dtm_filepath_by_gdp_id_by_id[gdp_id][dtm_first_id]
+                    if not os.path.exists(dtm_first_file_path):
+                        continue
+                    dtm_first_fp_file_path = dtm_fp_filepath_by_gdp_id_by_id[gdp_id][dtm_first_id]
+                    if not os.path.exists(dtm_first_fp_file_path):
+                        continue
+                    if not dtm_first_id in dtm_fp_geometry_by_gdp_id_by_id[gdp_id]:
+                        continue
+                    dtm_first_fp_geometry = dtm_fp_geometry_by_gdp_id_by_id[gdp_id][dtm_first_id]
+                    str_first_date = self.photogrammetry_projects[dtm_first_id][defs_ph_prjs_dlg.FIELD_DATE]
+                    str_first_date_formated = str_first_date.replace(':', '')
+                    for j in range(i + 1, len(phgmp_ids_as_list)):
+                        dtm_second_id = phgmp_ids_as_list[j]
+                        dtm_second_file_path = dtm_filepath_by_gdp_id_by_id[gdp_id][dtm_second_id]
+                        if not os.path.exists(dtm_second_file_path):
+                            continue
+                        dtm_second_fp_file_path = dtm_fp_filepath_by_gdp_id_by_id[gdp_id][dtm_second_id]
+                        if not os.path.exists(dtm_second_fp_file_path):
+                            continue
+                        if not dtm_second_id in dtm_fp_geometry_by_gdp_id_by_id[gdp_id]:
+                            continue
+                        dtm_second_fp_geometry = dtm_fp_geometry_by_gdp_id_by_id[gdp_id][dtm_second_id]
+                        # check exists overlaps
+                        if (not dtm_first_fp_geometry.Intersects(dtm_second_fp_geometry)
+                                and not dtm_first_fp_geometry.Within(dtm_second_fp_geometry)
+                                and not dtm_first_fp_geometry.Within(dtm_second_fp_geometry)):
+                            continue
+                        str_second_date = self.photogrammetry_projects[dtm_second_id][defs_ph_prjs_dlg.FIELD_DATE]
+                        str_second_date_formated = str_second_date.replace(':', '')
+                        str_date_from = str_first_date
+                        str_date_to = str_second_date
+                        str_date_from_formated = str_first_date_formated
+                        str_date_to_formated = str_second_date_formated
+                        dtm_from_id = dtm_first_id
+                        dtm_to_id = dtm_second_id
+                        dtm_from_file_path = dtm_first_file_path
+                        dtm_to_file_path = dtm_second_file_path
+                        if str_first_date_formated > str_second_date_formated:
+                            str_date_from = str_second_date
+                            str_date_to = str_first_date
+                            str_date_from_formated = str_second_date_formated
+                            str_date_to_formated = str_first_date_formated
+                            dtm_from_id = dtm_second_id
+                            dtm_to_id = dtm_first_id
+                            dtm_from_file_path = dtm_second_file_path
+                            dtm_to_file_path = dtm_first_file_path
+                        dtm_vol_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                            + dtm_from_id + '_'
+                                            + dtm_to_id + '_'
+                                            + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                            + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                            + ".tif")
+                        dtm_vol_file_path = os.path.join(output_path, dtm_vol_filename)
+                        dtm_vol_file_path = os.path.normpath(dtm_vol_file_path)
+                        dtm_vol_fp_aux_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                                   + dtm_from_id + '_'
+                                                   + dtm_to_id + '_'
+                                                   + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                                   + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                                   + "_aux.geojson")
+                        dtm_vol_fp_aux_file_path = os.path.join(output_path, dtm_vol_fp_aux_filename)
+                        dtm_vol_fp_aux_file_path = os.path.normpath(dtm_vol_fp_aux_file_path)
+                        dtm_vol_fp_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
+                                               + dtm_from_id + '_'
+                                               + dtm_to_id + '_'
+                                               + defs_ph_prjs_dlg.FIELD_DTM + '_'
+                                               + defs_vc.VOLUME_RASTER_FILE_SUFIX
+                                               + ".geojson")
+                        dtm_vol_fp_file_path = os.path.join(output_path, dtm_vol_fp_filename)
+                        dtm_vol_fp_file_path = os.path.normpath(dtm_vol_fp_file_path)
+                        if not os.path.exists(dtm_vol_file_path):
+                            if os.path.exists(dtm_vol_fp_file_path):
+                                os.remove(dtm_vol_fp_file_path)
+                            command_calc = ("gdal_calc -A \"{}\"".format(dtm_to_file_path))
+                            command_calc += (" -B \"{}\"".format(dtm_from_file_path))
+                            command_calc += (" --outfile=\"{}\"".format(dtm_vol_file_path))
+                            command_calc += (" --calc=\"A-B\" --NoDataValue -9999 --type=Float32 --co \"COMPRESS=LZW\"")
+                            volumes_computations_commands.append(command_calc)
+                        if not os.path.exists(dtm_vol_fp_file_path):
+                            commmand_fp_1_command = ("gdal raster contour --levels MIN,MAX --polygonize ");
+                            commmand_fp_1_command += (" \"{}\" \"{}\"".format(dtm_vol_file_path,
+                                                                              dtm_vol_fp_aux_file_path))
+                            volumes_computations_commands.append(commmand_fp_1_command)
+                            commmand_fp_2_command = ("ogr2ogr  \"{}\" \"{}\"".format(dtm_vol_fp_file_path,
+                                                                                     dtm_vol_fp_aux_file_path))
+                            commmand_fp_2_command += (
+                                " -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(
+                                    gdp_gsd))
+                            volumes_computations_commands.append(commmand_fp_2_command)
+                            command_fp_3_command = ("del \"{}\" /Q".format(dtm_vol_fp_aux_file_path))
+                            volumes_computations_commands.append(command_fp_3_command)
+                        vc_id = "gdp_" + gdp_id
+                        vc_id += "_" + str_date_from_formated
+                        vc_id += "_" + str_date_to_formated
+                        vc_id += "_" + defs_ph_prjs_dlg.FIELD_DTM
+                        volume_computation = {}
+                        volume_computation[defs_vc.FIELD_ID] = vc_id
+                        volume_computation[defs_vc.FIELD_ENABLED] = 1
+                        volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
+                        volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
+                        volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DTM_DIFFERENCE
+                        volume_computation[defs_vc.FIELD_CRS] = gdp_crs
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dtm_vol_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dtm_vol_fp_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dtm_from_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dtm_to_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
+                        volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
+                        # volume_computation[defs_vc.FIELD_CONTENT] = ''
+                        volumes_computations[vc_id] = volume_computation
         if len(volumes_computations_commands) > 0:
             steps = len(volumes_computations_commands)
             progress = QProgressDialog("Computing volume files...", "Cancel", 0, steps)

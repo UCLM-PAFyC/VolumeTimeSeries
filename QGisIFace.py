@@ -2,6 +2,8 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 
 import sys, os
+from pathlib import Path
+
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
@@ -10,6 +12,7 @@ from VolumeTimeSeries.lib.Project import Project
 from VolumeTimeSeries.defs import defs_project
 from VolumeTimeSeries.defs import defs_main
 from VolumeTimeSeries.defs import defs_qgis_paths
+from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdps
 # from lib import gui_defines as gd
 # from lib import qgis_gui_defines as qgd
 # from pyCRSs import CRSsDefines as cd
@@ -18,10 +21,12 @@ from VolumeTimeSeries.defs import defs_qgis_paths
 
 from qgis.core import (QgsApplication, QgsDataSourceUri, QgsProject,
                        QgsCoordinateReferenceSystem, QgsCoordinateTransform)
-from qgis.core import QgsProject, QgsVectorLayer, QgsSymbol, QgsRendererCategory, QgsCategorizedSymbolRenderer
+from qgis.core import (QgsProject, QgsVectorLayer, QgsSymbol, QgsRendererCategory,
+                       QgsCategorizedSymbolRenderer,QgsMeshLayer)
 from qgis.core import QgsField, QgsFeature, QgsPoint, QgsGeometry
 from qgis import utils
 from qgis.core import Qgis
+from qgis.core import QgsSettings
 
 class QGisIFace:
     def __init__(self,
@@ -31,7 +36,8 @@ class QGisIFace:
         self.plugin_path = plugin_path
         self.project = None
         self.project_crs = None
-        self.qgis_prefix_path = QgsApplication.prefixPath()
+        qgis_bin_path = Path(QgsApplication.prefixPath())
+        self.qgis_prefix_path = os.path.realpath(str(qgis_bin_path.parent.parent))
         self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
         self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
         self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
@@ -39,6 +45,7 @@ class QGisIFace:
         self.qgis_python_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
         self.layerTreeProjectName = ''
         self.layerTreeProject = None
+        self.layerTreeGDPById = {}
 
     def close_project(self):
         if not self.project:
@@ -51,6 +58,7 @@ class QGisIFace:
             self.removeGroup(root, self.layerTreeProjectName)
             self.layerTreeProjectName = ''
             self.project = None
+            self.layerTreeGDPById.clear()
 
     def get_map_canvas_wkb_geometry_in_project_crs(self):
         str_error = ''
@@ -85,40 +93,45 @@ class QGisIFace:
         qgisProjectCrsAsEpsg = QgsProject.instance().crs().authid()
         if qgisProjectCrsAsEpsg != project_crs:
             QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(project_crs))
-        # if len(self.project.points) == 0:
-        #     return
-        # self.layerNetworkPoints = None
-        # self.layerNetworkPoints = QgsVectorLayer("Point?crs=" + project_crs,
-        #                                          qgd.CONST_LAYER_NETWORK_POINTS_NAME, "memory")
-        # layerNetworkPointsProvider = self.layerNetworkPoints.dataProvider()
-        # for field_name in qgd.layer_network_points_attributes:
-        #     layerNetworkPointsProvider.addAttributes([QgsField(field_name,
-        #                                      qgd.layer_network_points_attributes[field_name])])
-        # nop = 0
-        # self.layerNetworkPoints.startEditing()
-        # points_geometry = {}
-        # for point_id in self.project.points:
-        #     position = self.project.points[point_id].get_position_for_qgis()
-        #     if not position:
-        #         continue
-        #     feature = QgsFeature()
-        #     feature.setFields(layerNetworkPointsProvider.fields())
-        #     fc = position.coordinates[cd.X_PROJECTION_LABEL]
-        #     sc = position.coordinates[cd.Y_PROJECTION_LABEL]
-        #     position_type = position.type
-        #     geom = QgsPoint(fc, sc)
-        #     feature.setGeometry(QgsGeometry.fromPoint(geom))
-        #     feature.setAttribute("id", point_id)
-        #     feature.setAttribute("type", position_type)
-        #     self.layerNetworkPoints.addFeature(feature)
-        #     nop = nop + 1
-        #     enabled = True
-        #     points_geometry[point_id] = geom
-        #     # enabled = position.enabled_by_position_type[position_type]
-        # self.layerNetworkPoints.commitChanges()
-        # self.layerNetworkPoints.loadNamedStyle(self.qml_network_points)
-        # QgsProject.instance().addMapLayer(self.layerNetworkPoints, False)
-        # self.layerTreeProject.addLayer(self.layerNetworkPoints)
+
+        # Create a QSettings instance
+        # qgsSettings = QgsSettings()
+
+        # 1. Action: Define the default CRS behavior for new layers
+        # Valid options are:
+        # 'useProject'    -> Uses the current project's CRS
+        # 'useDefault'     -> Uses a specific predefined default CRS
+        # 'prompt'        -> Asks the user to choose a CRS upon creation
+        # 'useUnknown'    -> Leaves the layer's CRS as unknown
+        # projections_default_behavior_current = qgsSettings.value("/Projections/defaultBehavior")
+        self.iface.mainWindow().blockSignals(True)
+        for gdp_id in self.project.geometric_design_projects:
+            gdp = self.project.geometric_design_projects[gdp_id]
+            layerTreeGDPName = defs_gdps.QGIS_GDPS_LAYERS_GROUP_PREFIX + gdp_id
+            self.layerTreeGDPById[gdp_id] = self.layerTreeProject.addGroup(layerTreeGDPName)
+            if not gdp_id in self.project.gdp_ply_file_path_by_id:
+                continue
+            gdp_ply_file_path = self.project.gdp_ply_file_path_by_id[gdp_id]
+            str_crs = gdp[defs_gdps.FIELD_CRS]
+            if '+' in str_crs:
+                str_crs = str_crs.split('+')
+                str_crs = str_crs[0]
+            # qgsSettings.setValue("/Projections/defaultBehavior", "useUnknown")
+            # qgsSettings.sync()
+            # gdp_mesh_uri = gdp_ply_file_path + '?crs=25830' + gdp[defs_gdps.FIELD_CRS]
+            layer_name = defs_gdps.QGIS_GDPS_MESH_LAYER_NAME
+            provider_name = 'mdal'
+            mesh_layer = QgsMeshLayer(gdp_ply_file_path, layer_name, provider_name)
+            mesh_layer.setCrs(QgsCoordinateReferenceSystem(str_crs)) #gdp[defs_gdps.FIELD_CRS]))
+            # mesh_layer.loadNamedStyle(self.qml_network_points)
+            QgsProject.instance().addMapLayer(mesh_layer, False)
+            self.layerTreeGDPById[gdp_id].addLayer(mesh_layer)
+            # mesh_layer.updateExtents()
+            self.iface.mapCanvas().setExtent(mesh_layer.extent())
+        # qgsSettings.setValue("/Projections/defaultBehavior", projections_default_behavior_current)
+        self.iface.mainWindow().blockSignals(False)
+
+            # self.layerTreeLSAs = self.layerTreeProject.addGroup(layerTreeLSAsName)
         # self.layerNetworkPoints.updateExtents()
         # self.iface.mapCanvas().setExtent(self.layerNetworkPoints.extent())
 

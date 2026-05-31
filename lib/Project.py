@@ -117,6 +117,7 @@ class Project:
         self.qgis_bin_path = None
         self.qgis_plugins_path = None
         self.qgis_python_path = None
+        self.gdp_ply_file_path_by_id = {}
         self.initialize()
 
     def create_geometric_design_project_from_landxml(self,
@@ -222,6 +223,60 @@ class Project:
         geometric_design_project[defs_gdp.FIELD_BB_WKT] = wkt_bb
         return str_error, geometric_design_project
 
+    def create_geometric_design_projects_ply(self):
+        str_error = ''
+        self.gdp_ply_file_path_by_id.clear()
+        output_path = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH]
+        if not output_path:
+            str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+            str_error += ("\nProject output path is not defined")
+            return str_error
+        if self.qgis_prefix_path is None:
+            str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+            str_error += ("\nQGIS prefix path is None")
+            return str_error
+        if not os.path.isdir(output_path):
+            str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+            str_error += ("\nProject output path is not a path:\n{}".format(output_path))
+            return str_error
+        if not os.path.exists(output_path):
+            str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+            str_error += ("\nProject output path not exists:\n{}".format(output_path))
+            return str_error
+        for gdp_id in self.geometric_design_projects:
+            gdp = self.geometric_design_projects[gdp_id]
+            gdp_enabled = gdp[defs_gdp.FIELD_ENABLED]
+            if gdp_enabled == 0:
+                continue
+            gdp_file_basename = "gdp_" + gdp_id
+            # gdp_crs = gdp[defs_gdp.FIELD_CRS]
+            # gdp_gsd = np.round(gdp[defs_gdp.FIELD_GSD_VOLUMES_COMPUTATION] * 100.) / 100.  # cm accuracy
+            # gdp_min_x = np.floor(gdp[defs_gdp.FIELD_MINIMUM_X])
+            # gdp_max_x = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_X])
+            # gdp_min_y = np.floor(gdp[defs_gdp.FIELD_MINIMUM_Y])
+            # gdp_max_y = np.ceil(gdp[defs_gdp.FIELD_MAXIMUM_Y])
+            gdp_ply_filename = gdp_file_basename + ".ply"
+            gdp_ply_filepath = os.path.join(output_path, gdp_ply_filename)
+            gdp_ply_filepath = os.path.normpath(gdp_ply_filepath)
+            if os.path.exists(gdp_ply_filepath):
+                self.gdp_ply_file_path_by_id[gdp_id] = gdp_ply_filepath
+                continue
+            # if os.path.exists(gdp_ply_filepath):
+            #     os.remove(gdp_ply_filepath)
+            if os.path.exists(gdp_ply_filepath):
+                str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+                str_error += ("\nError removing existing PLY for geometric design project: {}".format(gdp_id))
+                return str_error
+            gdp_ply_content = gdp[defs_gdp.FIELD_TRIANGULATION_PLY]
+            with open(gdp_ply_filepath, "w") as f_ply:
+                f_ply.write(gdp_ply_content)
+            if not os.path.exists(gdp_ply_filepath):
+                str_error = Project.__name__ + "." + self.create_geometric_design_projects_ply.__name__
+                str_error += ("\nError making PLY for geometric design project: {}".format(gdp_id))
+                return str_error
+            self.gdp_ply_file_path_by_id[gdp_id] = gdp_ply_filepath
+        return str_error
+
     def geometric_design_projects_gui(self, parent_widget):
         str_error = ''
         title = defs_gdp.DIALOG_TITLE
@@ -275,23 +330,23 @@ class Project:
         error_msgs = []
         output_path = self.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_OUTPUT_PATH]
         if not output_path:
-            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
             str_error += ("\nProject output path is not defined")
             return str_error
         if self.qgis_prefix_path is None:
-            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
             str_error += ("\nQGIS prefix path is None")
             return str_error
         if not os.path.isdir(output_path):
-            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
             str_error += ("\nProject output path is not a path:\n{}".format(output_path))
             return str_error
         if not os.path.exists(output_path):
-            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
             str_error += ("\nProject output path not exists:\n{}".format(output_path))
             return str_error
         if not computeForGeometricDesigns:
-            str_error = Project.__name__ + "." + self.save_to_json.__name__
+            str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
             str_error += ("\nNot compute for Geometric Design Projects option is not implemented")
             return str_error
         # compute design projects as raster
@@ -359,7 +414,7 @@ class Project:
                 if os.path.exists(gdp_ply_filepath):
                     os.remove(gdp_ply_filepath)
                 if os.path.exists(gdp_ply_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nError removing existing PLY for geometric design project: {}".format(gdp_id))
                     progress.close()
                     return str_error
@@ -367,7 +422,7 @@ class Project:
                 with open(gdp_ply_filepath, "w") as f_ply:
                     f_ply.write(gdp_ply_content)
                 if not os.path.exists(gdp_ply_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nError making PLY for geometric design project: {}".format(gdp_id))
                     progress.close()
                     return str_error
@@ -379,7 +434,7 @@ class Project:
                 if os.path.exists(gdp_py_filepath):
                     os.remove(gdp_py_filepath)
                 if os.path.exists(gdp_py_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nError removing existing PY for geometric design project: {}".format(gdp_id))
                     progress.close()
                     return str_error
@@ -424,7 +479,7 @@ class Project:
                 if os.path.exists(gdp_bat_filepath):
                     os.remove(gdp_bat_filepath)
                 if os.path.exists(gdp_bat_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nError removing existing BAT for geometric design project: {}".format(gdp_id))
                     progress.close()
                     return str_error
@@ -495,7 +550,7 @@ class Project:
                 # os.system(command)
                 # if not os.path.exists(gdp_raster_qgis_filepath):
                 if not os.path.exists(gdp_raster_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nSomething fails executing:\n{}".format(command))
                     progress.close()
                     return str_error
@@ -503,7 +558,7 @@ class Project:
                     if os.path.exists(file_to_remove):
                         os.remove(file_to_remove)
                     if os.path.exists(file_to_remove):
-                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                         str_error += (
                             "\nError removing file: {}".format(file_to_remove))
                         progress.close()
@@ -517,13 +572,13 @@ class Project:
                                                          geojson_fp_fields,
                                                          geojson_fp_filter_fields)
             if len(features) != 1:
-                str_error = Project.__name__ + "." + self.save_to_json.__name__
+                str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                 str_error += (
                     "\nThere are no one feature in footprint file:\n{}".format(gdp_raster_fp_filepath))
                 progress.close()
                 return str_error
             if not defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY in features[0]:
-                str_error = Project.__name__ + "." + self.save_to_json.__name__
+                str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                 str_error += (
                     "\nThere are no geometry in feature in footprint file:\n{}".format(gdp_raster_fp_filepath))
                 progress.close()
@@ -531,7 +586,7 @@ class Project:
             try:
                 ogr_geometry = ogr.CreateGeometryFromWkb(features[0][defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY])
             except Exception as e:
-                str_error = Project.__name__ + "." + self.save_to_json.__name__
+                str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                 str_error += (
                     "\nCreatring geometry in feature in footprint file:\n{}".format(gdp_raster_fp_filepath))
                 str_error += '\nGDAL Error: ' + e.args[0]
@@ -648,7 +703,7 @@ class Project:
                     if os.path.exists(gdp_bat_filepath):
                         os.remove(gdp_bat_filepath)
                     if os.path.exists(gdp_bat_filepath):
-                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                         str_error += ("\nError removing existing BAT file:\n{}".format(gdp_bat_filepath))
                         progress.close()
                         return str_error
@@ -674,7 +729,7 @@ class Project:
                     # os.system(command)
                     # if not os.path.exists(gdp_raster_qgis_filepath):
                     if not os.path.exists(output_filepath):
-                        msg_error = Project.__name__ + "." + self.save_to_json.__name__
+                        msg_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                         msg_error += ("\nSomething fails computing optimized DSM:\n{}".format(output_filepath))
                         error_msgs.append(msg_error)
                     if os.path.exists(gdp_bat_filepath):
@@ -690,13 +745,13 @@ class Project:
                                                              geojson_fp_fields,
                                                              geojson_fp_filter_fields)
                 if len(features) != 1:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nThere are no one feature in footprint file:\n{}".format(dsm_fp_file_path))
                     progress.close()
                     return str_error
                 if not defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY in features[0]:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nThere are no geometry in feature in footprint file:\n{}".format(dsm_fp_file_path))
                     progress.close()
@@ -704,7 +759,7 @@ class Project:
                 try:
                     ogr_geometry = ogr.CreateGeometryFromWkb(features[0][defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY])
                 except Exception as e:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nCreatring geometry in feature in footprint file:\n{}".format(dsm_fp_file_path))
                     str_error += '\nGDAL Error: ' + e.args[0]
@@ -824,7 +879,7 @@ class Project:
                     if os.path.exists(gdp_bat_filepath):
                         os.remove(gdp_bat_filepath)
                     if os.path.exists(gdp_bat_filepath):
-                        str_error = Project.__name__ + "." + self.save_to_json.__name__
+                        str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                         str_error += ("\nError removing existing BAT file:\n{}".format(gdp_bat_filepath))
                         progress.close()
                         return str_error
@@ -850,7 +905,7 @@ class Project:
                     # os.system(command)
                     # if not os.path.exists(gdp_raster_qgis_filepath):
                     if not os.path.exists(output_filepath):
-                        msg_error = Project.__name__ + "." + self.save_to_json.__name__
+                        msg_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                         msg_error += ("\nSomething fails computing optimized DTM:\n{}".format(output_filepath))
                         error_msgs.append(msg_error)
                     if os.path.exists(gdp_bat_filepath):
@@ -866,13 +921,13 @@ class Project:
                                                              geojson_fp_fields,
                                                              geojson_fp_filter_fields)
                 if len(features) != 1:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nThere are no one feature in footprint file:\n{}".format(dtm_fp_file_path))
                     progress.close()
                     return str_error
                 if not defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY in features[0]:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nThere are no geometry in feature in footprint file:\n{}".format(dtm_fp_file_path))
                     progress.close()
@@ -880,7 +935,7 @@ class Project:
                 try:
                     ogr_geometry = ogr.CreateGeometryFromWkb(features[0][defs_vc.GEOJSON_FP_FIELD_FEATURES_GEOMETRY])
                 except Exception as e:
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += (
                         "\nCreatring geometry in feature in footprint file:\n{}".format(dtm_fp_file_path))
                     str_error += '\nGDAL Error: ' + e.args[0]
@@ -1360,7 +1415,7 @@ class Project:
                 if os.path.exists(cv_bat_filepath):
                     os.remove(cv_bat_filepath)
                 if os.path.exists(cv_bat_filepath):
-                    str_error = Project.__name__ + "." + self.save_to_json.__name__
+                    str_error = Project.__name__ + "." + self.processVolumesComputations.__name__
                     str_error += ("\nError removing existing BAT file:\n{}".format(cv_bat_filepath))
                     progress.close()
                     return str_error
@@ -1565,6 +1620,11 @@ class Project:
                 str_error = Project.__name__ + "." + self.set_from_json.__name__
                 str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
                 return str_error
+        str_aux_error = self.create_geometric_design_projects_ply()
+        if str_aux_error:
+            str_error = Project.__name__ + "." + self.set_from_json.__name__
+            str_error += ('\nSetting from json project file:\n{}\nerror:\n{}'.format(file_name, str_aux_error))
+            return str_error
         self.file_path = file_name
         return str_error
 

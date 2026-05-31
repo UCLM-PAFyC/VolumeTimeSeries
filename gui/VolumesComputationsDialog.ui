@@ -161,6 +161,34 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="loadInQgisLabel">
+       <property name="text">
+        <string>Load in QGIS selected rasters:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="loadInQgisResultPushButton">
+       <property name="text">
+        <string>Result</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="loadInQgisFromPushButton">
+       <property name="text">
+        <string>From</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="loadInQgisToPushButton">
+       <property name="text">
+        <string>To</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer_3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

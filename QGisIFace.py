@@ -37,25 +37,20 @@ class QGisIFace:
         self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
         self.qgis_plugins_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
         self.qgis_python_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
+        self.layerTreeProjectName = ''
+        self.layerTreeProject = None
 
     def close_project(self):
         if not self.project:
             return
-        # if not self.layerTreeProjectName:
-        #     self.project = None
-        #     return
-        # root = QgsProject.instance().layerTreeRoot()
-        # if self.layerTreeProjectName:
-        #     self.removeGroup(root, self.layerTreeProjectName)
-        #     self.layerTreeProjectName = None
-        #     self.layerTreeMeasurements = None
-        #     self.layerTreeLSAs = None
-        #     self.project = None
-        #     self.layerNetworkPoints= None
-        #     self.layerNetworkMeasurementsByTypeBySession.clear()
-        #     self.layerLSAsMeasurements.clear()
-        #     self.layerLSAsPositions.clear()
-        #     self.layerTreeLsaById.clear()
+        if self.layerTreeProjectName:
+            self.project = None
+            return
+        root = QgsProject.instance().layerTreeRoot()
+        if self.layerTreeProjectName:
+            self.removeGroup(root, self.layerTreeProjectName)
+            self.layerTreeProjectName = ''
+            self.project = None
 
     def get_map_canvas_wkb_geometry_in_project_crs(self):
         str_error = ''
@@ -80,17 +75,16 @@ class QGisIFace:
 
     def load_project(self):
         root = QgsProject.instance().layerTreeRoot()
-        # project_tag = self.project.project_definition[gd.PROJECT_DEFINITIONS_TAG_TAG]
-        # project_crs = self.project.project_definition[gd.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS]
-        # if not project_tag or not project_crs:
-        #     return
-        # group_name = qgd.CONST_LAYER_TREE_PROJECT_NAME
-        # self.layerTreeProjectName = group_name + '_' + project_tag
-        # # self.layerTreeProject = root.addGroup(self.layerTreeProjectName)
-        # self.layerTreeProject = root.insertGroup(0, self.layerTreeProjectName)
-        # qgisProjectCrsAsEpsg = QgsProject.instance().crs().authid()
-        # if qgisProjectCrsAsEpsg != project_crs:
-        #     QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(project_crs))
+        project_tag = self.project.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_TAG]
+        project_crs = self.project.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_PROJECTED_CRS]
+        if not project_tag or not project_crs:
+            return
+        self.layerTreeProjectName = defs_project.QGIS_PROJECT_LAYERS_GROUP_PREFIX + project_tag
+        # self.layerTreeProject = root.addGroup(self.layerTreeProjectName)
+        self.layerTreeProject = root.insertGroup(0, self.layerTreeProjectName)
+        qgisProjectCrsAsEpsg = QgsProject.instance().crs().authid()
+        if qgisProjectCrsAsEpsg != project_crs:
+            QgsProject.instance().setCrs(QgsCoordinateReferenceSystem(project_crs))
         # if len(self.project.points) == 0:
         #     return
         # self.layerNetworkPoints = None

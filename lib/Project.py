@@ -1038,6 +1038,8 @@ class Project:
                         dsm_to_id = dsm_second_id
                         dsm_from_file_path = dsm_first_file_path
                         dsm_to_file_path = dsm_second_file_path
+                        dsm_fp_from_file_path = dsm_first_fp_file_path
+                        dsm_fp_to_file_path = dsm_second_fp_file_path
                         if str_first_date_formated > str_second_date_formated:
                             str_date_from = str_second_date
                             str_date_to = str_first_date
@@ -1047,6 +1049,8 @@ class Project:
                             dsm_to_id = dsm_first_id
                             dsm_from_file_path = dsm_second_file_path
                             dsm_to_file_path = dsm_first_file_path
+                            dsm_fp_from_file_path = dsm_second_fp_file_path
+                            dsm_fp_to_file_path = dsm_first_fp_file_path
                         dsm_vol_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
                                             + dsm_from_id + '_'
                                             + dsm_to_id + '_'
@@ -1101,14 +1105,14 @@ class Project:
                         volume_computation[defs_vc.FIELD_ENABLED] = 1
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
-                        volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DSM_DIFFERENCE
+                        volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_DSMS_DIFFERENCE
                         volume_computation[defs_vc.FIELD_CRS] = gdp_crs
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dsm_vol_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dsm_vol_fp_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dsm_from_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dsm_to_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dsm_fp_from_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = dsm_to_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = dsm_fp_to_file_path
                         volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
                         # volume_computation[defs_vc.FIELD_CONTENT] = ''
                         volumes_computations[vc_id] = volume_computation
@@ -1258,6 +1262,8 @@ class Project:
                         dtm_to_id = dtm_second_id
                         dtm_from_file_path = dtm_first_file_path
                         dtm_to_file_path = dtm_second_file_path
+                        dtm_fp_from_file_path = dtm_first_fp_file_path
+                        dtm_fp_to_file_path = dtm_second_fp_file_path
                         if str_first_date_formated > str_second_date_formated:
                             str_date_from = str_second_date
                             str_date_to = str_first_date
@@ -1267,6 +1273,8 @@ class Project:
                             dtm_to_id = dtm_first_id
                             dtm_from_file_path = dtm_second_file_path
                             dtm_to_file_path = dtm_first_file_path
+                            dtm_fp_from_file_path = dtm_second_fp_file_path
+                            dtm_fp_to_file_path = dtm_first_fp_file_path
                         dtm_vol_filename = ("gdp_" + gdp_id + '_' #+ str_date_formated + '_'
                                             + dtm_from_id + '_'
                                             + dtm_to_id + '_'
@@ -1321,14 +1329,14 @@ class Project:
                         volume_computation[defs_vc.FIELD_ENABLED] = 1
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
-                        volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_GD_DTM_DIFFERENCE
+                        volume_computation[defs_vc.FIELD_VOLUME_TYPE] = defs_vc.VOLUME_TYPE_DTMS_DIFFERENCE
                         volume_computation[defs_vc.FIELD_CRS] = gdp_crs
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT] = dtm_vol_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON] = dtm_vol_fp_file_path
                         volume_computation[defs_vc.FIELD_RASTER_FILE_FROM] = dtm_from_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dtm_to_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = gdp_raster_file_path
-                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = gdp_raster_fp_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON] = dtm_fp_from_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO] = dtm_to_file_path
+                        volume_computation[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON] = dtm_fp_to_file_path
                         volume_computation[defs_vc.FIELD_DESCRIPTION] = ''
                         # volume_computation[defs_vc.FIELD_CONTENT] = ''
                         volumes_computations[vc_id] = volume_computation
@@ -1380,15 +1388,16 @@ class Project:
             progress.close()
             QApplication.processEvents()
         self.volumes_computations.clear()
-        for vc_id in volumes_computations:
-            volume_computation = volumes_computations[vc_id]
-            dsm_vol_fp_file_path = volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON]
-            if not os.path.exists(dsm_vol_fp_file_path):
-                continue
-            exists_footprints = get_exists_footprint_from_geojson(dsm_vol_fp_file_path)
-            if not exists_footprints:
-                continue
-            self.volumes_computations[vc_id] = volume_computation
+        self.volumes_computations = volumes_computations
+        # for vc_id in volumes_computations:
+        #     volume_computation = volumes_computations[vc_id]
+        #     dsm_vol_fp_file_path = volume_computation[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON]
+        #     if not os.path.exists(dsm_vol_fp_file_path):
+        #         continue
+        #     exists_footprints = get_exists_footprint_from_geojson(dsm_vol_fp_file_path)
+        #     if not exists_footprints:
+        #         continue
+        #     self.volumes_computations[vc_id] = volume_computation
         return str_error
 
     def project_definition_gui(self,

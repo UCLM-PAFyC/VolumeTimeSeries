@@ -114,10 +114,33 @@ class VolumesComputationsDialog(QDialog):
             self.tableWidget.setHorizontalHeaderItem(i, header_item)
         self.tableWidget.setSizeAdjustPolicy(
             QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.tableWidget.setSortingEnabled(True)
         qgis_prefix_path = self.project.get_qgis_prefix_path()
         if qgis_prefix_path:
             self.qgisPathLineEdit.setText(qgis_prefix_path)
+        if self.project.qgis_iface is None:
+            self.loadInQgisLabel.setEnabled(False)
+            self.loadInQgisResultPushButton.setEnabled(False)
+            self.loadInQgisFromPushButton.setEnabled(False)
+            self.loadInQgisToPushButton.setEnabled(False)
+        else:
+            self.loadInQgisLabel.setEnabled(False)
+            self.loadInQgisResultPushButton.setEnabled(False)
+            self.loadInQgisFromPushButton.setEnabled(False)
+            self.loadInQgisToPushButton.setEnabled(False)
+        self.loadInQgisResultPushButton.clicked.connect(self.loadInQgisResult)
+        self.loadInQgisFromPushButton.clicked.connect(self.loadInQgisFrom)
+        self.loadInQgisToPushButton.clicked.connect(self.loadInQgisTo)
         self.update_gui()
+
+    def loadInQgisResult(self):
+        return
+
+    def loadInQgisFrom(self):
+        return
+
+    def loadInQgisTo(self):
+        return
 
     @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
     def on_click(self, item):
@@ -162,6 +185,8 @@ class VolumesComputationsDialog(QDialog):
         else:
             str_msg = "Process completed"
             Tools.info_msg(str_msg)
+        self.volumes_computations = dict(self.project.volumes_computations)
+        self.update_gui()
         return
 
     def remove(self):
@@ -248,6 +273,12 @@ class VolumesComputationsDialog(QDialog):
             date_to_item.setTextAlignment(Qt.AlignCenter)
             column_pos = column_pos + 1
             self.tableWidget.setItem(rowPosition, column_pos, date_to_item)
+            # type
+            type = self.volumes_computations[id][defs_vc.FIELD_VOLUME_TYPE]
+            type_item = QTableWidgetItem(type)
+            type_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, type_item)
             # crs
             crs_id = self.volumes_computations[id][defs_vc.FIELD_CRS]
             crs_id_item = QTableWidgetItem(crs_id)

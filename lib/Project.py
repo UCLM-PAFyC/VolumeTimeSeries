@@ -120,6 +120,13 @@ class Project:
         self.gdp_ply_file_path_by_id = {}
         self.initialize()
 
+    def close_qgis(self):
+        str_error = ''
+        if self.qgis_iface is None:
+            return
+        self.qgis_iface.close_project()
+        return str_error
+
     def create_geometric_design_project_from_landxml(self,
                                                      id,
                                                      crs_id,
@@ -307,6 +314,13 @@ class Project:
         if self.qgis_iface:
             self.qgis_iface.set_project(self)
         return
+
+    def open_qgis(self):
+        str_error = ''
+        if self.qgis_iface is None:
+            return
+        str_error = self.qgis_iface.open_project(self)
+        return str_error
 
     def photogrammetry_projects_gui(self, parent_widget):
         str_error = ''
@@ -1038,6 +1052,7 @@ class Project:
                     vc_id += "_" + defs_ph_prjs_dlg.FIELD_DSM
                     volume_computation = {}
                     volume_computation[defs_vc.FIELD_ID] = vc_id
+                    volume_computation[defs_vc.FIELD_GDP_ID] = gdp_id
                     volume_computation[defs_vc.FIELD_ENABLED] = 1
                     volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date
                     volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date
@@ -1157,6 +1172,7 @@ class Project:
                         vc_id += "_" + defs_ph_prjs_dlg.FIELD_DSM
                         volume_computation = {}
                         volume_computation[defs_vc.FIELD_ID] = vc_id
+                        volume_computation[defs_vc.FIELD_GDP_ID] = gdp_id
                         volume_computation[defs_vc.FIELD_ENABLED] = 1
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
@@ -1262,6 +1278,7 @@ class Project:
                     vc_id += "_" + defs_ph_prjs_dlg.FIELD_DTM
                     volume_computation = {}
                     volume_computation[defs_vc.FIELD_ID] = vc_id
+                    volume_computation[defs_vc.FIELD_GDP_ID] = gdp_id
                     volume_computation[defs_vc.FIELD_ENABLED] = 1
                     volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date
                     volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date
@@ -1381,6 +1398,7 @@ class Project:
                         vc_id += "_" + defs_ph_prjs_dlg.FIELD_DTM
                         volume_computation = {}
                         volume_computation[defs_vc.FIELD_ID] = vc_id
+                        volume_computation[defs_vc.FIELD_GDP_ID] = gdp_id
                         volume_computation[defs_vc.FIELD_ENABLED] = 1
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_FROM] = str_date_from
                         volume_computation[defs_vc.FIELD_VOLUME_DATE_TO] = str_date_to
@@ -1490,8 +1508,8 @@ class Project:
         # Writing to sample.json
         with open(self.file_path, "w") as outfile:
             outfile.write(json_object)
-        if self.qgis_iface:
-            self.qgis_iface.open_project(self)
+        # if self.qgis_iface:
+        #     self.qgis_iface.open_project(self)
         return str_error
 
     def set_definition_from_json(self, json_content):

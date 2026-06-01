@@ -46,6 +46,19 @@ class VolumeTimeSeriesDialog(QDialog):
         self.last_path = None
         self.initialize()
 
+    def close_qgis(self):
+        if self.qgis_iface is None:
+            return
+        if self.project is None:
+            return
+        str_error = self.project.close_qgis()
+        if str_error:
+            str_error = ('Error closing project:\n{}'.format(str_error))
+            Tools.error_msg(str_error)
+            return
+        self.closeProjectQgisPushButton.setEnabled(False)
+        self.openProjectQgisPushButton.setEnabled(True)
+
     def create_project(self, file_path):
         str_error = ''
         self.project = Project(self.qgis_iface,
@@ -103,10 +116,26 @@ class VolumeTimeSeriesDialog(QDialog):
         self.tabWidget.setEnabled(False)
         self.saveProjectPushButton.setEnabled(False)
         self.updateQGISPushButton.clicked.connect(self.update_qgis)
+        self.openProjectQgisPushButton.setVisible(False)
+        self.openProjectQgisPushButton.setEnabled(False)
         self.updateQGISPushButton.setVisible(False)
         self.updateQGISPushButton.setEnabled(False)
-
+        self.openProjectQgisPushButton.clicked.connect(self.open_qgis)
+        self.closeProjectQgisPushButton.clicked.connect(self.close_qgis)
         return
+
+    def open_qgis(self):
+        if self.qgis_iface is None:
+            return
+        if self.project is None:
+            return
+        str_error = self.project.open_qgis()
+        if str_error:
+            str_error = ('Error opening project:\n{}'.format(str_error))
+            Tools.error_msg(str_error)
+            return
+        self.closeProjectQgisPushButton.setEnabled(True)
+        self.openProjectQgisPushButton.setEnabled(False)
 
     def open_project(self, file_name):
         str_error = ''
@@ -203,11 +232,23 @@ class VolumeTimeSeriesDialog(QDialog):
             if self.qgis_iface:
                 self.qgis_iface.open_project(self.project)
                 self.updateQGISPushButton.setEnabled(True)
+                self.closeProjectQgisPushButton.setEnabled(True)
+                self.openProjectQgisPushButton.setEnabled(False)
             # self.projectDefinitionPushButton.setEnabled(True)
         return
 
     def set_qgis_iface(self, qgis_iface):
         self.qgis_iface = qgis_iface
+        if self.qgis_iface is not None:
+            self.openProjectQgisPushButton.setVisible(True)
+            self.openProjectQgisPushButton.setEnabled(False)
+            self.closeProjectQgisPushButton.setVisible(True)
+            self.closeProjectQgisPushButton.setEnabled(False)
+        else:
+            self.openProjectQgisPushButton.setVisible(False)
+            self.openProjectQgisPushButton.setEnabled(False)
+            self.closeProjectQgisPushButton.setVisible(False)
+            self.closeProjectQgisPushButton.setEnabled(False)
 
     def update_qgis(self):
         if not self.qgis_iface:

@@ -123,23 +123,80 @@ class VolumesComputationsDialog(QDialog):
             self.loadInQgisResultPushButton.setEnabled(False)
             self.loadInQgisFromPushButton.setEnabled(False)
             self.loadInQgisToPushButton.setEnabled(False)
+            self.loadInQgisAllPushButton.setEnabled(False)
         else:
-            self.loadInQgisLabel.setEnabled(False)
-            self.loadInQgisResultPushButton.setEnabled(False)
-            self.loadInQgisFromPushButton.setEnabled(False)
-            self.loadInQgisToPushButton.setEnabled(False)
+            self.loadInQgisLabel.setEnabled(True)
+            self.loadInQgisResultPushButton.setEnabled(True)
+            self.loadInQgisFromPushButton.setEnabled(True)
+            self.loadInQgisToPushButton.setEnabled(True)
+            self.loadInQgisAllPushButton.setEnabled(True)
         self.loadInQgisResultPushButton.clicked.connect(self.loadInQgisResult)
         self.loadInQgisFromPushButton.clicked.connect(self.loadInQgisFrom)
         self.loadInQgisToPushButton.clicked.connect(self.loadInQgisTo)
+        self.loadInQgisAllPushButton.clicked.connect(self.loadInQgisAll)
         self.update_gui()
 
-    def loadInQgisResult(self):
+    def loadInQgisAll(self):
+        self.loadInQgisResult()
+        self.loadInQgisTo()
+        self.loadInQgisFrom()
         return
 
     def loadInQgisFrom(self):
+        if self.project.qgis_iface is None:
+            return
+        if len(self.volumes_computations) == 0:
+            return
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                id = id_item.text()
+                if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:
+                    continue
+                gdp_id = self.volumes_computations[id][defs_vc.FIELD_GDP_ID]
+                result_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_FROM]
+                result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON]
+                str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
+                if str_error:
+                    Tools.error_msg(str_error)
+        return
+
+    def loadInQgisResult(self):
+        if self.project.qgis_iface is None:
+            return
+        if len(self.volumes_computations) == 0:
+            return
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                id = id_item.text()
+                if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:
+                    continue
+                gdp_id = self.volumes_computations[id][defs_vc.FIELD_GDP_ID]
+                result_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_RESULT]
+                result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON]
+                str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
+                if str_error:
+                    Tools.error_msg(str_error)
         return
 
     def loadInQgisTo(self):
+        if self.project.qgis_iface is None:
+            return
+        if len(self.volumes_computations) == 0:
+            return
+        for i in range(self.tableWidget.rowCount()):
+            id_item = self.tableWidget.item(i, 0)
+            if id_item.isSelected():
+                id = id_item.text()
+                if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:
+                    continue
+                gdp_id = self.volumes_computations[id][defs_vc.FIELD_GDP_ID]
+                result_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_TO]
+                result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_TO_GEOJSON]
+                str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
+                if str_error:
+                    Tools.error_msg(str_error)
         return
 
     @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
@@ -253,6 +310,12 @@ class VolumesComputationsDialog(QDialog):
             id_item.setTextAlignment(Qt.AlignCenter)
             column_pos = 0
             self.tableWidget.setItem(rowPosition, column_pos, id_item)
+            # gdp_id
+            gdp_id = self.volumes_computations[id][defs_vc.FIELD_GDP_ID]
+            gdp_id_item = QTableWidgetItem(gdp_id)
+            gdp_id_item.setTextAlignment(Qt.AlignCenter)
+            column_pos = column_pos + 1
+            self.tableWidget.setItem(rowPosition, column_pos, gdp_id_item)
             # enabled
             str_enabled = 'True'
             if self.volumes_computations[id][defs_vc.FIELD_ENABLED] == 0:

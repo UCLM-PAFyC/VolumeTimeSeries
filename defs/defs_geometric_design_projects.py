@@ -10,8 +10,6 @@ from VolumeTimeSeries.defs import defs_paths, defs_project
 common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
 sys.path.append(common_libs_absolute_path)
 
-QGIS_GDPS_LAYERS_GROUP_PREFIX = "Geometric Design Projects: "
-QGIS_GDPS_MESH_LAYER_NAME = "Mesh Layer"
 DIALOG_TITLE = "Geometric Design Projects"
 CONST_NO_COMBO_SELECT = " ... "
 RESUME_CONTENT = "Click to view"

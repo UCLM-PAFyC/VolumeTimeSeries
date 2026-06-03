@@ -19,3 +19,4 @@ FOOTPRINT_LAYER_NAME_SUFFIX = "_footprint"
 CONST_QML_PATH = '/templates/qml'
 CONTS_LAYER_MESH_QML = '/gdp_mesh.qml'
 CONTS_LAYER_FOOTPRINT_QML = '/footprint.qml'
+

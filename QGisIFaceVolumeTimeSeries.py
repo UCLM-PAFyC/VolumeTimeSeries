@@ -101,57 +101,70 @@ class QGisIFaceVolumeTimeSeries(QGisIFace):
         return str_error
 
     def load_volume(self,
-                    id, gdp_id, raster_file_path, footprint_file_path):
+                    id,
+                    gdp_id,
+                    raster_file_path,
+                    footprint_file_path):
         str_error = ''
-        # if not gdp_id in self.project.geometric_design_projects:
-        #     str_error = ('Not exists Geometric Design Projed Id: {}'.format(gdp_id))
-        #     return str_error
-        # if not id in self.project.volumes_computations:
-        #     str_error = ('For Geometric Design Projed Id: {}\nnot exist volume id: {}'.format(gdp_id, id))
-        #     return str_error
-        # if not gdp_id in self.layerTreeGDPById:
-        #     str_error = self.load_geometric_design_project(gdp_id)
-        #     if str_error:
-        #         return str_error
-        # if not id in self.layerTreeVolumeById:
-        #     layerTreeVolumeName = defs_qgis.VOLUMES_LAYERS_GROUP_PREFIX + id
-        #     # self.layerTreeProject = root.addGroup(self.layerTreeProjectName)
-        #     self.layerTreeVolumeById[id] = self.layerTreeGDPById[gdp_id].addGroup(layerTreeVolumeName)
-        # str_date_from =  self.project.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_FROM]
-        # str_date_from_formatted = str_date_from.replace(':', '')
-        # str_date_to =  self.project.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_TO]
-        # str_date_to_formatted = str_date_from.replace(':', '')
-        # raster_basename = os.path.basename(raster_file_path).split('.')[0]
-        # raster_layer_name = str_date_from_formatted + '_' + str_date_to_formatted + '_' + raster_basename
+        if not gdp_id in self.project.geometric_design_projects:
+            str_error = ('Not exists Geometric Design Projed Id: {}'.format(gdp_id))
+            return str_error
+        if not id in self.project.volumes_computations:
+            str_error = ('For Geometric Design Projed Id: {}\nnot exist volume id: {}'.format(gdp_id, id))
+            return str_error
+        root = QgsProject.instance().layerTreeRoot()
+        layerTreeProject = root.findGroup(self.layerTreeProjectName)
+        if layerTreeProject is None:
+            self.open_project(self.project)
+        layerTreeGDPName = defs_qgis.GDPS_LAYERS_GROUP_PREFIX + gdp_id
+        layerTreeGDP = layerTreeProject.findGroup(layerTreeGDPName)
+        if layerTreeGDP is None:
+            str_error = self.load_geometric_design_project(gdp_id)
+            if str_error:
+                return str_error
+            layerTreeGDP = layerTreeProject.findGroup(layerTreeGDPName)
+        layerTreeVolumeName = defs_qgis.VOLUMES_LAYERS_GROUP_PREFIX + id
+        layerTreeVolume = layerTreeGDP.findGroup(layerTreeVolumeName)
+        if layerTreeVolume is None:
+            layerTreeVolume = layerTreeGDP.addGroup(layerTreeVolumeName)
+        str_date_from =  self.project.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_FROM]
+        str_date_from_formatted = str_date_from.replace(':', '')
+        str_date_to =  self.project.volumes_computations[id][defs_vc.FIELD_VOLUME_DATE_TO]
+        str_date_to_formatted = str_date_from.replace(':', '')
+        raster_basename = os.path.basename(raster_file_path).split('.')[0]
+        raster_layer_name = str_date_from_formatted + '_' + str_date_to_formatted + '_' + raster_basename
         # # listLayers = QgsProject.instance().mapLayersByName(layer_name)
         # # if listLayers:
         # #     return str_error
-        # if not raster_layer_name in self.layer_by_name:
-        #     raster_layer = QgsRasterLayer(raster_file_path, raster_layer_name)
-        #     if not raster_layer.isValid():
-        #         str_error = ('For Geometric Design Projed Id: {}\ninvalid raster layer from file:\n{}'
-        #                      .format(gdp_id, raster_file_path))
-        #         return str_error
-        #     QgsProject.instance().addMapLayer(raster_layer, False)
-        #     self.layerTreeVolumeById[id].addLayer(raster_layer)
-        #     self.layer_by_name[raster_layer_name] = raster_layer
-        # vector_basename = os.path.basename(footprint_file_path).split('.')[0]
-        # vector_basename = str_date_from_formatted + '_' + str_date_to_formatted + '_' + vector_basename
-        # vector_basename += '_' + defs_qgis.FOOTPRINT_LAYER_NAME_SUFFIX
-        # # listLayers = QgsProject.instance().mapLayersByName(layer_name)
-        # # if listLayers:
-        # #     return str_error
-        # if not vector_basename in self.layer_by_name:
-        #     vector_layer = QgsVectorLayer(footprint_file_path, vector_basename, "ogr")
-        #     if not vector_layer.isValid():
-        #         str_error = ('For Geometric Design Projed Id: {}\ninvalid footpring vector layer from file:\n{}'
-        #                      .format(gdp_id, vector_layer))
-        #         return str_error
-        #     if os.path.exists(self.qml_footprint):
-        #         vector_layer.loadNamedStyle(self.qml_footprint)
-        #     QgsProject.instance().addMapLayer(vector_layer, False)
-        #     self.layerTreeVolumeById[id].addLayer(vector_layer)
-        #     self.layer_by_name[vector_basename] = vector_layer
+        raster_layer = None
+        for child in layerTreeVolume.children():
+            if child.name() == raster_layer_name:
+                raster_layer = child
+        if raster_layer is None:
+            raster_layer = QgsRasterLayer(raster_file_path, raster_layer_name)
+            if not raster_layer.isValid():
+                str_error = ('For Geometric Design Projed Id: {}\ninvalid raster layer from file:\n{}'
+                             .format(gdp_id, raster_file_path))
+                return str_error
+            QgsProject.instance().addMapLayer(raster_layer, False)
+            layerTreeVolume.addLayer(raster_layer)
+        vector_basename = os.path.basename(footprint_file_path).split('.')[0]
+        vector_basename = str_date_from_formatted + '_' + str_date_to_formatted + '_' + vector_basename
+        vector_basename += defs_qgis.FOOTPRINT_LAYER_NAME_SUFFIX
+        vector_layer = None
+        for child in layerTreeVolume.children():
+            if child.name() == vector_basename:
+                vector_layer = child
+        if vector_layer is None:
+            vector_layer = QgsVectorLayer(footprint_file_path, vector_basename, "ogr")
+            if not vector_layer.isValid():
+                str_error = ('For Geometric Design Projed Id: {}\ninvalid footpring vector layer from file:\n{}'
+                             .format(gdp_id, vector_layer))
+                return str_error
+            if os.path.exists(self.qml_footprint):
+                vector_layer.loadNamedStyle(self.qml_footprint)
+            QgsProject.instance().addMapLayer(vector_layer, False)
+            layerTreeVolume.addLayer(vector_layer)
         return str_error
 
     def open_project(self,

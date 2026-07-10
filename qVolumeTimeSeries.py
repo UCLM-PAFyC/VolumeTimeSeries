@@ -66,7 +66,6 @@ from VolumeTimeSeries.QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 sys.path.append("C:/Program Files/JetBrains/PyCharm 2026.1.4/debug-eggs/pydevd-pycharm.egg")  # dhl
 import pydevd_pycharm
 
-
 class qVolumeTimeSeries(object):
 
     def __init__(self, iface):

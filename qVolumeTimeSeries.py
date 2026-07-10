@@ -55,7 +55,7 @@ sys.path.append(os.path.join(current_path, '..'))
 # Import the code for the dialog
 from VolumeTimeSeries.gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
 from VolumeTimeSeries.defs import defs_main
-from VolumeTimeSeries.QGisIFace import QGisIFace
+from VolumeTimeSeries.QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 
 # # sys.path.append("C:\Program Files\JetBrains\PyCharm 2020.3\debug-eggs\pydevd-pycharm.egg") # dhl
 # sys.path.append("C:\Program Files\JetBrains\PyCharm 2023.2\debug-eggs\pydevd-pycharm.egg")  # dhl
@@ -63,15 +63,16 @@ from VolumeTimeSeries.QGisIFace import QGisIFace
 # sys.path.append("C:\\Program Files\\JetBrains\\PyCharm 2025.2.0.1\\debug-eggs\\pydevd-pycharm.egg")  # dhl
 # import pydevd
 # import pydevd_pycharm
+sys.path.append("C:/Program Files/JetBrains/PyCharm 2026.1.4/debug-eggs/pydevd-pycharm.egg")  # dhl
+import pydevd_pycharm
 
 
 class qVolumeTimeSeries(object):
 
     def __init__(self, iface):
 
-        # pydevd.settrace('localhost',port=54100,stdoutToServer=True,stderrToServer=True)
-        # pydevd.settrace('localhost',port=54100,stdoutToServer=True,stderrToServer=True)
-        # pydevd_pycharm.settrace('localhost', port=54100)
+        # pydevd_pycharm.settrace('localhost',port=54100, stdoutToServer=True, stderrToServer=True) # old
+        # pydevd_pycharm.settrace('localhost',port=54100, stdout_to_server=True, stderr_to_server=True)
 
         self.projVersionMajor = projVersionMajor
         self.path_plugin = pluginPath
@@ -236,8 +237,8 @@ class qVolumeTimeSeries(object):
             # self.widget = qAicedroneDockWidget(self.iface)
             self.widget = VolumeTimeSeriesDialog(self.plugin_settings,
                                                  pluginPath)
-            qgis_iface = QGisIFace(self.iface,
-                                   self.path_plugin)
+            qgis_iface = QGisIFaceVolumeTimeSeries(self.iface,
+                                                   self.path_plugin)
             self.widget.set_qgis_iface(qgis_iface)
 
         self.widget.finished.connect(self.onClosePlugin)

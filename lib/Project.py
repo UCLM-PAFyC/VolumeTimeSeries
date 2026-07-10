@@ -46,7 +46,7 @@ sys.path.append(os.path.join(current_path, '../..'))
 from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
 from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
 from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
-from VolumeTimeSeries.defs import defs_qgis_paths
+# from VolumeTimeSeries.defs import defs_qgis
 
 from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
 from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
@@ -64,6 +64,8 @@ from pyLibGDAL.GDALTools import GDALTools
 from pyLibLandXml.LandXml import LandXml
 from pyLibPhotogrammetry.defs import defs_projects_dialog as defs_ph_prjs_dlg
 from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
+from pyLibQGIS.QGisIFace import defs_qgis
+
 
 def get_exists_footprint_from_geojson(file_path):
     exists_footprint = False
@@ -319,7 +321,7 @@ class Project:
         str_error = ''
         if self.qgis_iface is None:
             return
-        str_error = self.qgis_iface.open_project(self)
+        self.qgis_iface.open_project(self)
         return str_error
 
     def photogrammetry_projects_gui(self, parent_widget):
@@ -1675,7 +1677,7 @@ class Project:
             self.qgis_prefix_path = None
             return str_error
         else:
-            self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BAT_SUFFIX_WINDOWS)
+            self.osge4w_bat_path = os.path.normpath(self.qgis_prefix_path + defs_qgis.OSGEO4W_BAT_SUFFIX_WINDOWS)
             if not os.path.exists(self.osge4w_bat_path):
                 self.settings.setValue("qgis_prefix_path", "")
                 self.settings.sync()
@@ -1683,7 +1685,7 @@ class Project:
                 self.qgis_prefix_path = None
                 self.osge4w_bat_path = None
                 return str_error
-            self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.OSGEO4W_BIN_SUFFIX_WINDOWS)
+            self.osge4w_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis.OSGEO4W_BIN_SUFFIX_WINDOWS)
             if not os.path.exists(self.osge4w_bin_path):
                 self.settings.setValue("qgis_prefix_path", "")
                 self.settings.sync()
@@ -1692,7 +1694,7 @@ class Project:
                 self.osge4w_bat_path = None
                 self.osge4w_bin_path = None
                 return str_error
-            self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis_paths.QGIS_BIN_SUFFIX_WINDOWS)
+            self.qgis_bin_path = os.path.normpath(self.qgis_prefix_path + defs_qgis.QGIS_BIN_SUFFIX_WINDOWS)
             if not os.path.exists(self.qgis_bin_path):
                 self.settings.setValue("qgis_prefix_path", "")
                 self.settings.sync()
@@ -1703,7 +1705,7 @@ class Project:
                 self.qgis_bin_path = None
                 return str_error
             self.qgis_plugins_path = os.path.normpath(
-                self.qgis_prefix_path + defs_qgis_paths.QGIS_PLUGINS_SUFFIX_WINDOWS)
+                self.qgis_prefix_path + defs_qgis.QGIS_PLUGINS_SUFFIX_WINDOWS)
             if not os.path.exists(self.qgis_plugins_path):
                 self.settings.setValue("qgis_prefix_path", "")
                 self.settings.sync()
@@ -1715,7 +1717,7 @@ class Project:
                 self.qgis_plugins_path = None
                 return str_error
             self.qgis_python_path = os.path.normpath(
-                self.qgis_prefix_path + defs_qgis_paths.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
+                self.qgis_prefix_path + defs_qgis.QIGS_PYTHON_PATH_SUFFIX_WINDOWS)
             if not os.path.exists(self.qgis_python_path):
                 self.settings.setValue("qgis_prefix_path", "")
                 self.settings.sync()

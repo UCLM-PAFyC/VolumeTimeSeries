@@ -2,6 +2,7 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 import os
 import sys
+
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
 sys.path.append(os.path.join(current_path, '../..'))
@@ -10,7 +11,8 @@ sys.path.append(os.path.join(current_path, '../..'))
 
 from qgis.PyQt.QtCore import QVariant
 
-
+PROJECT_LAYERS_GROUP_PREFIX = "VolumeTimeSeries: "
+QML_PATH = '/templates/qml'
 PROJECT_LAYERS_GROUP_PREFIX = "Volumes Computations: "
 GDPS_LAYERS_GROUP_PREFIX = "Geometric Design Projects: "
 GDPS_MESH_LAYER_NAME = "Mesh Layer"

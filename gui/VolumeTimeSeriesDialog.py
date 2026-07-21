@@ -3,9 +3,9 @@
 
 import os, sys
 import json
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QDialog, QFileDialog
-from PyQt5.QtCore import QDir, QFileInfo
+from qgis.PyQt.uic import loadUi
+from qgis.PyQt.QtWidgets import QDialog, QFileDialog
+from qgis.PyQt.QtCore import QDir, QFileInfo
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))

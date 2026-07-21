@@ -10,11 +10,11 @@ import json
 import subprocess
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialog,
+from qgis.PyQt.uic import loadUi
+from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialog,
                              QFileDialog, QPushButton, QComboBox, QPlainTextEdit, QLineEdit,
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem)
-from PyQt5.QtCore import QDir, QFileInfo, QFile, QSize, Qt
+from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
@@ -244,7 +244,7 @@ class GeometricDesignProjectsDialog(QDialog):
         if label == defs_gdp.HEADER_DESCRIPTION_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_DESCRIPTION]
             readOnly = False
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
             text = dialog.get_text()
             if text != self.geometric_design_projects[id][defs_gdp.FIELD_DESCRIPTION]:
@@ -260,22 +260,22 @@ class GeometricDesignProjectsDialog(QDialog):
         elif label == defs_gdp.HEADER_AXIS3D_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_AXIS3D]
             readOnly = True
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
         elif label == defs_gdp.HEADER_PROFILE_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_PROFILE]
             readOnly = True
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
         elif label == defs_gdp.HEADER_TRIANGULATION_PLY_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_TRIANGULATION_PLY]
             readOnly = True
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
         elif label == defs_gdp.HEADER_ROI_TAG:
             text = self.geometric_design_projects[id][defs_gdp.FIELD_ROI]
             readOnly = True
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
         return
 

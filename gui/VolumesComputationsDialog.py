@@ -10,11 +10,11 @@ import json
 import subprocess
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialog,
+from qgis.PyQt.uic import loadUi
+from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialog,
                              QFileDialog, QPushButton, QComboBox, QPlainTextEdit, QLineEdit,
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem)
-from PyQt5.QtCore import QDir, QFileInfo, QFile, QSize, Qt
+from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
@@ -211,7 +211,7 @@ class VolumesComputationsDialog(QDialog):
         if label == defs_vc.HEADER_DESCRIPTION_TAG:
             text = self.volumes_computations[id][defs_vc.FIELD_DESCRIPTION]
             readOnly = False
-            dialog =  SimpleTextEditDialog(title, text, readOnly)
+            dialog =  SimpleTextEditDialog(title, text, readOnly, self)
             ret = dialog.exec()
             text = dialog.get_text()
             if text != self.volumes_computations[id][defs_vc.FIELD_DESCRIPTION]:

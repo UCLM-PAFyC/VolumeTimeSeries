@@ -2,8 +2,8 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 from codecs import strict_errors
 
-from PyQt5.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox, QProgressDialog
-from PyQt5.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime, Qt
+from qgis.PyQt.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox, QProgressDialog
+from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime, Qt
 
 import os
 import sys

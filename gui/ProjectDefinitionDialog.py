@@ -7,11 +7,11 @@ import math
 import json
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import (QApplication, QMessageBox, QDialog, QTreeWidgetItem,
+from qgis.PyQt.uic import loadUi
+from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QTreeWidgetItem,
                              QFileDialog, QPushButton, QComboBox, QPlainTextEdit, QLineEdit,
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem, QInputDialog)
-from PyQt5.QtCore import QDir, QFileInfo, QFile, QSize, Qt, QDate
+from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt, QDate
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_path, '..'))
@@ -224,7 +224,7 @@ class ProjectDefinitionDialog(QDialog):
         # if okPressed and text != '':
         #     self.descriptionLineEdit.setText(text)
         title = "Enter description"
-        dialog = SimpleTextEditDialog(title, current_text, False)
+        dialog = SimpleTextEditDialog(title, current_text, False, self)
         ret = dialog.exec()
         # if ret == QDialog.Accepted:
         #     text = dialog.get_text()

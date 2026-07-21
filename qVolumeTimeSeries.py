@@ -17,17 +17,17 @@ email                : david.hernandez@uclm.es
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 # Initialize Qt resources from file resources.py
 # from .resources import *
 # from .resources_rc import *
 
 import os.path
 import sys
-from PyQt5.QtWidgets import QMessageBox, QFileDialog, QTabWidget, QInputDialog, QLineEdit
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QFileInfo, QDir, QObject, QFile
+from qgis.PyQt.QtWidgets import QMessageBox, QFileDialog, QTabWidget, QInputDialog, QLineEdit
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QFileInfo, QDir, QObject, QFile
 from qgis.core import QgsApplication, QgsDataSourceUri, Qgis
 
 strQGISVersion = Qgis.QGIS_VERSION

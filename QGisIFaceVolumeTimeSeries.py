@@ -1,35 +1,18 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
 
-import sys, os
-from pathlib import Path
+import os
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-# sys.path.insert(0, '..')
+from defs import defs_geometric_design_projects as defs_gdps
+from defs import defs_volumes_computations as defs_vc
+from defs import defs_qgis
 
-from VolumeTimeSeries.lib.Project import Project
-from VolumeTimeSeries.defs import defs_project
-from VolumeTimeSeries.defs import defs_main
-from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdps
-from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
-from VolumeTimeSeries.defs import defs_qgis
 from pyLibQGIS.QGisIFace import QGisIFace
-
-# from lib import gui_defines as gd
-# from lib import qgis_gui_defines as qgd
-# from pyCRSs import CRSsDefines as cd
-# import json
-# import Tools
 
 from qgis.core import (QgsApplication, QgsDataSourceUri, QgsProject,
                        QgsCoordinateReferenceSystem, QgsCoordinateTransform)
 from qgis.core import (QgsProject, QgsVectorLayer, QgsSymbol, QgsRendererCategory,
                        QgsCategorizedSymbolRenderer, QgsMeshLayer, QgsRasterLayer)
-from qgis.core import QgsField, QgsFeature, QgsPoint, QgsGeometry
-from qgis import utils
-from qgis.core import Qgis
-from qgis.core import QgsSettings
 
 class QGisIFaceVolumeTimeSeries(QGisIFace):
     def __init__(self, iface, plugin_path):

@@ -44,7 +44,7 @@ projVersionMajor = osr.GetPROJVersionMajor()
 pluginsPath = QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path()
 pluginPath = os.path.dirname(os.path.realpath(__file__))
 pluginPath = os.path.join(pluginsPath, pluginPath)
-libPath = os.path.join(pluginPath, 'lib')
+libPath = os.path.join(pluginPath, 'core')
 # existsPluginPath = QDir(libPath).exists()
 sys.path.append(pluginPath)
 sys.path.append(libPath)
@@ -53,9 +53,9 @@ sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
 
 # Import the code for the dialog
-from VolumeTimeSeries.gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
-from VolumeTimeSeries.defs import defs_main
-from VolumeTimeSeries.QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
+from gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
+from defs import defs_main
+from QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 
 # # sys.path.append("C:\Program Files\JetBrains\PyCharm 2020.3\debug-eggs\pydevd-pycharm.egg") # dhl
 # sys.path.append("C:\Program Files\JetBrains\PyCharm 2023.2\debug-eggs\pydevd-pycharm.egg")  # dhl
@@ -63,8 +63,8 @@ from VolumeTimeSeries.QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 # sys.path.append("C:\\Program Files\\JetBrains\\PyCharm 2025.2.0.1\\debug-eggs\\pydevd-pycharm.egg")  # dhl
 # import pydevd
 # import pydevd_pycharm
-sys.path.append("C:/Program Files/JetBrains/PyCharm 2026.1.4/debug-eggs/pydevd-pycharm.egg")  # dhl
-import pydevd_pycharm
+# sys.path.append("C:/Program Files/JetBrains/PyCharm 2026.1.4/debug-eggs/pydevd-pycharm.egg")  # dhl
+# import pydevd_pycharm
 
 class qVolumeTimeSeries(object):
 

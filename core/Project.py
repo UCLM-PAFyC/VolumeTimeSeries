@@ -1,23 +1,15 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
-from codecs import strict_errors
 
 from qgis.PyQt.QtWidgets import QApplication, QMessageBox, QDialog, QFileDialog, QPushButton, QComboBox, QProgressDialog
 from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QDate, QDateTime, Qt
 
 import os
-import sys
 import subprocess
-import math
-import random
-import re
 import json
-import xmltodict
 import numpy as np
-from datetime import datetime
 
 from osgeo import gdal, osr, ogr
-from remotior_sensus.util.files_directories import output_path
 
 gdal.UseExceptions()
 
@@ -37,35 +29,21 @@ gdal.PushErrorHandler(err.handler)
 gdal.UseExceptions()  # Exceptions will get raised on anything >= gdal.CE_Failure
 assert err.err_level == gdal.CE_None, 'the error level starts at 0'
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-sys.path.append(os.path.join(current_path, '../..'))
-# sys.path.insert(0, '..')
-# sys.path.insert(0, '../..')
+from defs import defs_project, defs_main
+from defs import defs_geometric_design_projects as defs_gdp
+from defs import defs_volumes_computations as defs_vc
 
-from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
-from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
-from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
-# from VolumeTimeSeries.defs import defs_qgis
-
-from VolumeTimeSeries.gui.ProjectDefinitionDialog import ProjectDefinitionDialog
-from VolumeTimeSeries.gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
-from VolumeTimeSeries.gui.VolumesComputationsDialog import VolumesComputationsDialog
-
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
+from gui.ProjectDefinitionDialog import ProjectDefinitionDialog
+from gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
+from gui.VolumesComputationsDialog import VolumesComputationsDialog
 
 from pyLibCRSs import CRSsDefines as defs_crs
 from pyLibCRSs.CRSsTools import CRSsTools
-from pyLibQtTools import Tools
-from pyLibGDAL import defs_gdal
 from pyLibGDAL.GDALTools import GDALTools
-# from pyLibGDAL.RasterDEM import RasterDEM
 from pyLibLandXml.LandXml import LandXml
 from pyLibPhotogrammetry.defs import defs_projects_dialog as defs_ph_prjs_dlg
 from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
 from pyLibQGIS.QGisIFace import defs_qgis
-
 
 def get_exists_footprint_from_geojson(file_path):
     exists_footprint = False

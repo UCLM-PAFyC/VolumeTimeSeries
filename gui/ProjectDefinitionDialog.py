@@ -2,9 +2,6 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 
 import os
-import sys
-import math
-import json
 
 from PyQt5 import QtCore, QtWidgets
 from qgis.PyQt.uic import loadUi
@@ -13,23 +10,12 @@ from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QTreeWidget
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem, QInputDialog)
 from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt, QDate
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-sys.path.append(os.path.join(current_path, '../..'))
-# sys.path.insert(0, '..')
-# sys.path.insert(0, '../..')
-
-from PAFyCTools.defs import defs_main
-from PAFyCTools.defs import defs_project
-from PAFyCTools.defs import defs_paths
-
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
+from defs import defs_main
+from defs import defs_project
 
 from pyLibCRSs import CRSsDefines as defs_crs
 from pyLibQtTools import Tools
 from pyLibQtTools.Tools import SimpleTextEditDialog
-
 
 class ProjectDefinitionDialog(QDialog):
     """Employee dialog."""

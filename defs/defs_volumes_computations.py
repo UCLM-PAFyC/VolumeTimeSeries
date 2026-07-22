@@ -1,15 +1,5 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
-import os
-import sys
-
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-
-from VolumeTimeSeries.defs import defs_paths, defs_project
-from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
 
 from pyLibGDAL import defs_gdal
 

@@ -2,12 +2,6 @@
 # David Hernandez Lopez, david.hernandez@uclm.es
 
 import os
-import sys
-import math
-import pathlib
-import json
-
-import subprocess
 
 from PyQt5 import QtCore, QtWidgets
 from qgis.PyQt.uic import loadUi
@@ -16,25 +10,10 @@ from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialo
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem)
 from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-sys.path.append(os.path.join(current_path, '../..'))
-# sys.path.insert(0, '..')
-# sys.path.insert(0, '../..')
-
-from VolumeTimeSeries.defs import defs_paths, defs_project, defs_main
-from VolumeTimeSeries.defs import defs_geometric_design_projects as defs_gdp
-from VolumeTimeSeries.defs import defs_volumes_computations as defs_vc
-
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
+from defs import defs_volumes_computations as defs_vc
 
 from pyLibQtTools import Tools
 from pyLibQtTools.Tools import SimpleTextEditDialog, SimpleJSONDialog
-# from pyLibLandXml.LandXml import LandXml
-
-from pyLibQtTools.QProcessDialog import QProcessDialog
-from pyLibQtTools import defs_qprocess
 
 class VolumesComputationsDialog(QDialog):
     """Employee dialog."""
@@ -45,7 +24,7 @@ class VolumesComputationsDialog(QDialog):
                  parent=None):
         super().__init__(parent)
         loadUi(os.path.join(os.path.dirname(__file__), 'VolumesComputationsDialog.ui'), self)
-        # loadUi("lib/InstrumentsDialog.ui", self)
+        # loadUi("core/InstrumentsDialog.ui", self)
         self.project = project
         self.last_past = None
         self.title = title

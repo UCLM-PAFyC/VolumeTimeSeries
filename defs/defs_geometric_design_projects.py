@@ -3,13 +3,6 @@
 import os
 import sys
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-
-from VolumeTimeSeries.defs import defs_paths, defs_project
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
-
 DIALOG_TITLE = "Geometric Design Projects"
 CONST_NO_COMBO_SELECT = " ... "
 RESUME_CONTENT = "Click to view"

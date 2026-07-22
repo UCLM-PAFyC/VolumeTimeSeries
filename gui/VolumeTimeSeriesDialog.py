@@ -1,32 +1,16 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
 
-import os, sys
-import json
+import os
 from qgis.PyQt.uic import loadUi
 from qgis.PyQt.QtWidgets import QDialog, QFileDialog
 from qgis.PyQt.QtCore import QDir, QFileInfo
 
 current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-sys.path.append(os.path.join(current_path, '../..'))
-# sys.path.insert(0, '..')
-# sys.path.insert(0, '../..')
 
-from VolumeTimeSeries.defs import defs_paths, defs_main, defs_project
-from VolumeTimeSeries.lib.Project import Project
-
-common_libs_absolute_path = os.path.join(current_path, defs_paths.COMMON_LIBS_RELATIVE_PATH)
-sys.path.append(common_libs_absolute_path)
+from core.Project import Project
 
 from pyLibQtTools import Tools
-from pyLibQtTools.Tools import SimpleTextEditDialog
-# from pyLibParameters import defs_pars
-# from pyLibParameters.ParametersManager import ParametersManager
-# from pyLibParameters.ui_qt.ParametersManagerDialog import ParametersManagerDialog
-# from pyLibQtTools.QProcessDialog import QProcessDialog
-# from pyLibQtTools import defs_qprocess
-# from pyLibQtTools.multipleFileSelectorDialog.multiple_file_selector_dialog import MultipleFileSelectorDialog
 
 class VolumeTimeSeriesDialog(QDialog):
     """Employee dialog."""

@@ -3,5 +3,6 @@ SETLOCAL
 set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10
 call "%OSGEO4W_ROOT%\bin\o4w_env.bat"
 start pythonw .\VolumeTimeSeriesApp.py
-REM start /B python .\TopographicSurveyNetworkApp.py
+REM start /B python .\VolumeTimeSeriesApp.py
+REM start python -X faulthandler .\VolumeTimeSeriesApp.py
 ENDLOCAL

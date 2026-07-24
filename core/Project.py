@@ -305,7 +305,7 @@ class Project:
     def photogrammetry_projects_gui(self, parent_widget):
         str_error = ''
         title = defs_ph_prjs_dlg.PHOTOGRAMMETRY_PROJECTS_DIALOG_TITLE
-        dialog = PhotogrammetryProjectsDialog(self, title, parent_widget)
+        dialog = PhotogrammetryProjectsDialog(self, title, self.crs_tools, parent_widget)
         dialog_result = dialog.exec()
         # if dialog_result != QDialog.Accepted:
         #     return str_error

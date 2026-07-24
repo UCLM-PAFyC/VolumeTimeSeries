@@ -182,7 +182,7 @@ class VolumeTimeSeriesDialog(QDialog):
     def select_project_file(self):
         title = "Select Project File"
         previous_file = self.projectLineEdit.text()
-        dlg = QFileDialog()
+        dlg = QFileDialog(self)
         dlg.setDirectory(self.last_path)
         dlg.setFileMode(QFileDialog.AnyFile)
         dlg.setNameFilter("Project File (*.json)")

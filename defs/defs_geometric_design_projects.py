@@ -1,7 +1,5 @@
 # authors:
 # David Hernandez Lopez, david.hernandez@uclm.es
-import os
-import sys
 
 DIALOG_TITLE = "Geometric Design Projects"
 CONST_NO_COMBO_SELECT = " ... "

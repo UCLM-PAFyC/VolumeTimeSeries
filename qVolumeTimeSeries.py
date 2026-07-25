@@ -53,9 +53,9 @@ sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
 
 # Import the code for the dialog
-from gui import VolumeTimeSeriesDialog
-from defs import defs_main
-import QGisIFaceVolumeTimeSeries
+from .gui import VolumeTimeSeriesDialog
+from .defs import defs_main
+from .QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 
 # # sys.path.append("C:\Program Files\JetBrains\PyCharm 2020.3\debug-eggs\pydevd-pycharm.egg") # dhl
 # sys.path.append("C:\Program Files\JetBrains\PyCharm 2023.2\debug-eggs\pydevd-pycharm.egg")  # dhl

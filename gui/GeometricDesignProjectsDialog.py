@@ -13,9 +13,8 @@ from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
 from defs import defs_geometric_design_projects as defs_gdp
 
-from pyLibCRSs.CompoundProjectedCRSDialog import CompoundProjectedCRSDialog
-from pyLibQtTools import Tools
-from pyLibQtTools.Tools import SimpleTextEditDialog, SimpleJSONDialog
+from pyLibCRSs import CompoundProjectedCRSDialog
+from pyLibQtTools import info_msg, error_msg, SimpleTextEditDialog, SimpleJSONDialog
 
 class GeometricDesignProjectsDialog(QDialog):
     """Employee dialog."""
@@ -108,45 +107,45 @@ class GeometricDesignProjectsDialog(QDialog):
         file_path = self.fileLineEdit.text()
         if not file_path:
             str_msg = ("Select file before")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         if not os.path.exists(file_path):
             str_msg = ("Not exists file:\n{}".format(file_path))
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         format = self.formatComboBox.currentText()
         if format == defs_gdp.CONST_NO_COMBO_SELECT:
             str_msg = ("Select format before")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         id = self.idLineEdit.text()
         if not id:
             str_msg = ("Select id before")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         if id in self.geometric_design_projects:
             str_msg = ("Exists another geometric design project with id: {}\nSelect a new id".format(id))
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         crs_id = self.crsLineEdit.text()
         if not crs_id:
             str_msg = ("Select CRS before")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         if format != defs_gdp.FORMAT_LANDXML:
             str_msg = ("Format: {} is not implemented\nContact the author").format(format)
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         roi_width_as_text = self.roiWidthLineEdit.text()
         if not roi_width_as_text:
             str_msg = ("Select ROI Width before")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         roi_width = float(roi_width_as_text)
         gsd_computation_as_text = self.gsdComputationLineEdit.text()
         if not gsd_computation_as_text:
             str_msg = ("Select GSD computation")
-            Tools.error_msg(str_msg)
+            error_msg(str_msg)
             return
         gsd_computation = float(gsd_computation_as_text)
         str_error = ''
@@ -160,7 +159,7 @@ class GeometricDesignProjectsDialog(QDialog):
         if str_error or geometric_design_project is None:
             str_error = ('Creating Geometric Design Project from file:\n{}\nError:\n{}'
                          .format(file_path, str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         self.geometric_design_projects[id] = geometric_design_project
         self.update_gui()
@@ -270,7 +269,7 @@ class GeometricDesignProjectsDialog(QDialog):
                 ids_to_remove.append(id_item.text())
         if len(ids_to_remove) < 1:
             str_error = "Select rows to remove"
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         for i in range(len(ids_to_remove)):
             for j in range(self.tableWidget.rowCount()):
@@ -288,10 +287,10 @@ class GeometricDesignProjectsDialog(QDialog):
         if str_aux_error:
             str_error = ('Error saving project:\n{}'.
                          format(str_aux_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         else:
             str_msg = "Process completed"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
         return
 
     def select_crs(self):
@@ -307,7 +306,7 @@ class GeometricDesignProjectsDialog(QDialog):
         selected_format = self.formatComboBox.currentText()
         if selected_format == defs_gdp.CONST_NO_COMBO_SELECT:
             str_msg = "Select format before"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
             return
         title = "Select Geometric Design File"
         previous_file_name = self.fileLineEdit.text()
@@ -343,11 +342,11 @@ class GeometricDesignProjectsDialog(QDialog):
                 value = float(text)
             except ValueError:
                 str_error = "Value must be a real number"
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             if value < min_value or value > max_value:
                 str_error = ("Value is out of domain = [{} , {}]".format(str(min_value), str(max_value)))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             value_as_text = "{:.2f}".format(value)
             self.gsdComputationLineEdit.setText(value_as_text)
@@ -361,7 +360,7 @@ class GeometricDesignProjectsDialog(QDialog):
             # check exists previous id
             if text in self.project.geometric_design_projects:
                 str_msg = ("Exists another geometric design project with id: {}\nSelect another id".format(text))
-                Tools.info_msg(str_msg)
+                info_msg(str_msg)
                 return
             self.idLineEdit.setText(text)
         return
@@ -377,11 +376,11 @@ class GeometricDesignProjectsDialog(QDialog):
                 value = float(text)
             except ValueError:
                 str_error = "Value must be a real number"
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             if value < min_value or value > max_value:
                 str_error = ("Value is out of domain = [{} , {}]".format(str(min_value), str(max_value)))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             value_as_text = "{:.2f}".format(value)
             self.roiWidthLineEdit.setText(value_as_text)

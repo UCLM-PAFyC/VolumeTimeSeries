@@ -7,7 +7,7 @@ from defs import defs_geometric_design_projects as defs_gdps
 from defs import defs_volumes_computations as defs_vc
 from defs import defs_qgis
 
-from pyLibQGIS.QGisIFace import QGisIFace
+from pyLibQGIS import QGisIFace
 
 from qgis.core import (QgsApplication, QgsDataSourceUri, QgsProject,
                        QgsCoordinateReferenceSystem, QgsCoordinateTransform)

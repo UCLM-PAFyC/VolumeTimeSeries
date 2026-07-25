@@ -14,8 +14,7 @@ from defs import defs_main
 from defs import defs_project
 
 from pyLibCRSs import CRSsDefines as defs_crs
-from pyLibQtTools import Tools
-from pyLibQtTools.Tools import SimpleTextEditDialog
+from pyLibQtTools import info_msg, error_msg, SimpleTextEditDialog
 
 class ProjectDefinitionDialog(QDialog):
     """Employee dialog."""
@@ -99,7 +98,7 @@ class ProjectDefinitionDialog(QDialog):
             str_error, crs_summary = self.project.crs_tools.get_crs_summary(crs_id)
             if str_error:
                 str_error = ('Getting summary for CRS: {}, error:\n{}'.format(crs_id, str_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             item = QTreeWidgetItem(self.crs_projected_item)
             item.setText(0, crs_summary)
@@ -113,7 +112,7 @@ class ProjectDefinitionDialog(QDialog):
             str_error, crs_summary = self.project.crs_tools.get_crs_summary(crs_id)
             if str_error:
                 str_error = ('Getting summary for CRS: {}, error:\n{}'.format(crs_id, str_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             item = QTreeWidgetItem(self.crs_vertical_item)
             item.setText(0, crs_summary)
@@ -136,7 +135,7 @@ class ProjectDefinitionDialog(QDialog):
             str_error, crs_info_as_dict = self.project.crs_tools.get_crs_info_as_text(crs_id)
             if str_error:
                 str_error = ('Getting info for CRS: {}, error:\n{}'.format(crs_id, str_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
                 return
             self.crsTextEdit.setText(crs_info_as_dict)
             if crs_id in self.crs_projected_ids:
@@ -161,12 +160,12 @@ class ProjectDefinitionDialog(QDialog):
         crs_projected_id = self.crsProjectedLineEdit.text()
         if not crs_projected_id:
             str_error = ('Select Projected CRS')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         crs_vertical_id = self.crsVerticalLineEdit.text()
         if not crs_vertical_id:
             str_error = ('Select Vertical CRS')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         self.project.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_NAME] = name
         self.project.project_definition[defs_project.PROJECT_DEFINITIONS_TAG_TAG] = tag
@@ -189,10 +188,10 @@ class ProjectDefinitionDialog(QDialog):
         if str_aux_error:
             str_error = ('Error saving project definition:\n{}'.
                          format(str_aux_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         else:
             str_msg = "Process completed"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
         self.is_saved = True
         return
 

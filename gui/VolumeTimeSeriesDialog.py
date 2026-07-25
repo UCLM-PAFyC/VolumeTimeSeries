@@ -10,7 +10,7 @@ current_path = os.path.dirname(os.path.realpath(__file__))
 
 from core.Project import Project
 
-from pyLibQtTools import Tools
+from pyLibQtTools import info_msg, error_msg, Tools
 
 class VolumeTimeSeriesDialog(QDialog):
     """Employee dialog."""
@@ -38,7 +38,7 @@ class VolumeTimeSeriesDialog(QDialog):
         str_error = self.project.close_qgis()
         if str_error:
             str_error = ('Error closing project:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         self.closeProjectQgisPushButton.setEnabled(False)
         self.openProjectQgisPushButton.setEnabled(True)
@@ -56,31 +56,31 @@ class VolumeTimeSeriesDialog(QDialog):
             if not definition_is_saved:
                 str_error = ('Project definition must be save')
                 str_error += '\n{}'.format("CRSs definition cannot will be changed")
-                Tools.error_msg(str_error)
+                error_msg(str_error)
         if self.project.qgis_iface is not None:
             qgis_prefix_path = self.project.qgis_iface.get_qgis_prefix_path()
             str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
             if str_aux_error:
                 str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
         else:
             qgis_prefix_path = self.settings.value("qgis_prefix_path")
             if qgis_prefix_path:
                 str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
                 if str_aux_error:
                     str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
         return str_error
 
     def geometric_design_projects(self):
         if not self.project:
             str_error = ('Not exists project')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         str_error = self.project.geometric_design_projects_gui(self)
         if str_error:
             str_error = ('Geometric design project, error:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         return
 
@@ -116,7 +116,7 @@ class VolumeTimeSeriesDialog(QDialog):
         str_error = self.project.open_qgis()
         if str_error:
             str_error = ('Error opening project:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         self.closeProjectQgisPushButton.setEnabled(True)
         self.openProjectQgisPushButton.setEnabled(False)
@@ -131,26 +131,26 @@ class VolumeTimeSeriesDialog(QDialog):
             str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
             if str_aux_error:
                 str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
         else:
             qgis_prefix_path = self.settings.value("qgis_prefix_path")
             if qgis_prefix_path:
                 str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path)
                 if str_aux_error:
                     str_error = ('Error setting QGIS paths:\n{}'.format(str_aux_error))
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
         str_error = self.project.set_from_json(file_name)
         return str_error
 
     def photogrammetry_projects(self):
         if not self.project:
             str_error = ('Not exists project')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         str_error = self.project.photogrammetry_projects_gui(self)
         if str_error:
             str_error = ('Photogrammetry Projects, error:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         return
 
@@ -158,12 +158,12 @@ class VolumeTimeSeriesDialog(QDialog):
                            is_process_creation = False):
         if not self.project:
             str_error = ('Not exists project')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         str_error, definition_is_saved = self.project.project_definition_gui(is_process_creation)
         if str_error:
             str_error = ('Project definition, error:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         return definition_is_saved
 
@@ -172,11 +172,11 @@ class VolumeTimeSeriesDialog(QDialog):
         if str_error:
             # self.project_definition()
             str_error = ('Saving project, error:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         else:
             str_msg = "Process completed"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
         return
 
     def select_project_file(self):
@@ -203,7 +203,7 @@ class VolumeTimeSeriesDialog(QDialog):
             if os.path.exists(file_name):
                 str_error = self.open_project(file_name)
                 if str_error:
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
                     return
             else:
                 if not file_name.endswith(".json"):
@@ -240,18 +240,18 @@ class VolumeTimeSeriesDialog(QDialog):
         # str_error = self.qgis_iface.update_all()
         # if str_error:
         #     str_error += ('Updating QGIS, error:\n{}'.format(str_error))
-        #     Tools.error_msg(str_error)
+        #     error_msg(str_error)
         return
 
     def volumes_computations(self):
         if not self.project:
             str_error = ('Not exists project')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         str_error = self.project.volumes_computations_gui(self)
         if str_error:
             str_error = ('Volumes Computations, error:\n{}'.format(str_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return False
         return
 

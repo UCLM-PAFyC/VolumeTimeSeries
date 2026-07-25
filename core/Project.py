@@ -38,12 +38,12 @@ from gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
 from gui.VolumesComputationsDialog import VolumesComputationsDialog
 
 from pyLibCRSs import CRSsDefines as defs_crs
-from pyLibCRSs.CRSsTools import CRSsTools
-from pyLibGDAL.GDALTools import GDALTools
-from pyLibLandXml.LandXml import LandXml
-from pyLibPhotogrammetry.defs import defs_projects_dialog as defs_ph_prjs_dlg
-from pyLibPhotogrammetry.gui.PhotogrammetryProjectsDialog import PhotogrammetryProjectsDialog
-from pyLibQGIS.QGisIFace import defs_qgis
+from pyLibCRSs import CRSsTools
+from pyLibGDAL import GDALTools
+from pyLibLandXml import LandXml
+from pyLibPhotogrammetry import defs_projects_dialog as defs_ph_prjs_dlg
+from pyLibPhotogrammetry import PhotogrammetryProjectsDialog
+from pyLibQGIS import defs_qgis
 
 def get_exists_footprint_from_geojson(file_path):
     exists_footprint = False

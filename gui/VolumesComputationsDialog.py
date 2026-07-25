@@ -12,8 +12,7 @@ from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
 from defs import defs_volumes_computations as defs_vc
 
-from pyLibQtTools import Tools
-from pyLibQtTools.Tools import SimpleTextEditDialog, SimpleJSONDialog
+from pyLibQtTools import info_msg, error_msg, SimpleTextEditDialog, SimpleJSONDialog
 
 class VolumesComputationsDialog(QDialog):
     """Employee dialog."""
@@ -137,7 +136,7 @@ class VolumesComputationsDialog(QDialog):
                 result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON]
                 str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
                 if str_error:
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
         return
 
     def loadInQgisResult(self):
@@ -156,7 +155,7 @@ class VolumesComputationsDialog(QDialog):
                 result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON]
                 str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
                 if str_error:
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
         return
 
     def loadInQgisTo(self):
@@ -175,7 +174,7 @@ class VolumesComputationsDialog(QDialog):
                 result_fp_file_path = self.volumes_computations[id][defs_vc.FIELD_RASTER_FILE_TO_GEOJSON]
                 str_error = self.project.qgis_iface.load_volume(id, gdp_id, result_file_path, result_fp_file_path)
                 if str_error:
-                    Tools.error_msg(str_error)
+                    error_msg(str_error)
         return
 
     @QtCore.pyqtSlot(QtWidgets.QTableWidgetItem)
@@ -201,11 +200,11 @@ class VolumesComputationsDialog(QDialog):
     def process(self):
         if len(self.project.geometric_design_projects) == 0:
             str_error = ('There are no geometric designs projects')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         qgis_prefix_path = self.qgisPathLineEdit.text()
         if not qgis_prefix_path:
             str_error = ('Select QGIS prefix path before')
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         computeForDtm = self.computeForDtmCheckBox.isChecked()
         computeForDsm = self.computeForDsmCheckBox.isChecked()
         computeForGeometricDesigns = self.computeForGeometricDesignsCheckBox.isChecked()
@@ -217,10 +216,10 @@ class VolumesComputationsDialog(QDialog):
         if str_aux_error:
             str_error = ('Error processing volumes computations:\n{}'.
                          format(str_aux_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         else:
             str_msg = "Process completed"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
         self.volumes_computations = dict(self.project.volumes_computations)
         self.update_gui()
         return
@@ -235,7 +234,7 @@ class VolumesComputationsDialog(QDialog):
                 ids_to_remove.append(id_item.text())
         if len(ids_to_remove) < 1:
             str_error = "Select rows to remove"
-            Tools.error_msg(str_error)
+            error_msg(str_error)
             return
         for i in range(len(ids_to_remove)):
             for j in range(self.tableWidget.rowCount()):
@@ -253,10 +252,10 @@ class VolumesComputationsDialog(QDialog):
         if str_aux_error:
             str_error = ('Error saving project:\n{}'.
                          format(str_aux_error))
-            Tools.error_msg(str_error)
+            error_msg(str_error)
         else:
             str_msg = "Process completed"
-            Tools.info_msg(str_msg)
+            info_msg(str_msg)
         return
 
     def select_qgis_path(self):
@@ -274,7 +273,7 @@ class VolumesComputationsDialog(QDialog):
             str_aux_error = self.project.set_qgis_prefix_path(qgis_prefix_path) # inside set in settings
             if str_aux_error:
                 str_error = ('Error setting QGIS path:\n{}'.format(str_aux_error))
-                Tools.error_msg(str_error)
+                error_msg(str_error)
             else:
                 self.qgisPathLineEdit.setText(qgis_prefix_path)
         return

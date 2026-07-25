@@ -8,7 +8,7 @@ from qgis.PyQt.QtCore import QDir, QFileInfo
 
 current_path = os.path.dirname(os.path.realpath(__file__))
 
-from core.Project import Project
+from vts_core.Project import Project
 
 from pyLibQtTools import info_msg, error_msg, Tools
 

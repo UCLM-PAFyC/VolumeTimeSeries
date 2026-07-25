@@ -10,8 +10,8 @@ from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QTreeWidget
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem, QInputDialog)
 from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt, QDate
 
-from defs import defs_main
-from defs import defs_project
+from vts_defs import defs_main
+from vts_defs import defs_project
 
 from pyLibCRSs import CRSsDefines as defs_crs
 from pyLibQtTools import info_msg, error_msg, SimpleTextEditDialog

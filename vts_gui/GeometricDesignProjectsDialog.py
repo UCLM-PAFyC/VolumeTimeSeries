@@ -11,7 +11,7 @@ from qgis.PyQt.QtWidgets import (QApplication, QMessageBox, QDialog, QInputDialo
                              QDialogButtonBox, QVBoxLayout, QTableWidget, QTableWidgetItem)
 from qgis.PyQt.QtCore import QDir, QFileInfo, QFile, QSize, Qt
 
-from defs import defs_geometric_design_projects as defs_gdp
+from vts_defs import defs_geometric_design_projects as defs_gdp
 
 from pyLibCRSs import CompoundProjectedCRSDialog
 from pyLibQtTools import info_msg, error_msg, SimpleTextEditDialog, SimpleJSONDialog
@@ -25,7 +25,7 @@ class GeometricDesignProjectsDialog(QDialog):
                  parent=None):
         super().__init__(parent)
         loadUi(os.path.join(os.path.dirname(__file__), 'GeometricDesignProjectsDialog.ui'), self)
-        # loadUi("core/InstrumentsDialog.ui", self)
+        # loadUi("vts_core/InstrumentsDialog.ui", self)
         self.project = project
         self.last_past = None
         self.title = title

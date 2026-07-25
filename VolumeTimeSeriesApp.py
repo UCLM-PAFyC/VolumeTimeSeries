@@ -6,14 +6,8 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication,
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QApplication
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(current_path, '..'))
-# sys.path.insert(0, '..')
-
-from VolumeTimeSeries.gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
-from VolumeTimeSeries.defs import defs_main
-# import Tools
-
+from vts_gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
+from vts_defs import defs_main
 
 def main():
     app = QApplication(sys.argv)

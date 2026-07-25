@@ -3,9 +3,9 @@
 
 import os
 
-from defs import defs_geometric_design_projects as defs_gdps
-from defs import defs_volumes_computations as defs_vc
-from defs import defs_qgis
+from vts_defs import defs_geometric_design_projects as defs_gdps
+from vts_defs import defs_volumes_computations as defs_vc
+from vts_defs import defs_qgis
 
 from pyLibQGIS import QGisIFace
 

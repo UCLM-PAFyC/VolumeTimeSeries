@@ -29,13 +29,13 @@ gdal.PushErrorHandler(err.handler)
 gdal.UseExceptions()  # Exceptions will get raised on anything >= gdal.CE_Failure
 assert err.err_level == gdal.CE_None, 'the error level starts at 0'
 
-from defs import defs_project, defs_main
-from defs import defs_geometric_design_projects as defs_gdp
-from defs import defs_volumes_computations as defs_vc
+from vts_defs import defs_project, defs_main
+from vts_defs import defs_geometric_design_projects as defs_gdp
+from vts_defs import defs_volumes_computations as defs_vc
 
-from gui.ProjectDefinitionDialog import ProjectDefinitionDialog
-from gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
-from gui.VolumesComputationsDialog import VolumesComputationsDialog
+from vts_gui.ProjectDefinitionDialog import ProjectDefinitionDialog
+from vts_gui.GeometricDesignProjectsDialog import GeometricDesignProjectsDialog
+from vts_gui.VolumesComputationsDialog import VolumesComputationsDialog
 
 from pyLibCRSs import CRSsDefines as defs_crs
 from pyLibCRSs import CRSsTools
@@ -435,7 +435,7 @@ class Project:
                 files_to_remove.append(gdp_py_filepath)
                 f_py = open(gdp_py_filepath, "w")
                 f_py.write("import sys\n")
-                f_py.write("from qgis.core import QgsApplication, QgsProcessingFeedback\n")
+                f_py.write("from qgis.vts_core import QgsApplication, QgsProcessingFeedback\n")
                 f_py.write("from qgis.analysis import QgsNativeAlgorithms\n")
                 # f_py.write("QgsApplication.setPrefixPath(r'C:/Program Files/QGIS 3.40.10', True)\n")
                 f_py.write("QgsApplication.setPrefixPath(r'{}', True)\n".format(self.qgis_prefix_path))
@@ -444,7 +444,7 @@ class Project:
                 f_py.write("sys.path.append(r'{}')\n".format(self.qgis_plugins_path))
                 # f_py.write("sys.path.append(r'C:/Program Files/QGIS 3.40.10/apps/qgis-ltr/python/plugins')\n")
                 f_py.write("from qgis import processing\n")
-                f_py.write("from processing.core.Processing import Processing\n")
+                f_py.write("from processing.vts_core.Processing import Processing\n")
                 f_py.write("Processing.initialize()\n")
                 f_py.write("processing.run(\"native:meshrasterize\",{ \"DATASET_GROUPS\" : [0], ")
                 f_py.write("\"DATASET_TIME\" : {\'type\': \'static\'}, \"EXTENT\" : ")

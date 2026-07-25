@@ -44,7 +44,7 @@ projVersionMajor = osr.GetPROJVersionMajor()
 pluginsPath = QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path()
 pluginPath = os.path.dirname(os.path.realpath(__file__))
 pluginPath = os.path.join(pluginsPath, pluginPath)
-libPath = os.path.join(pluginPath, 'core')
+libPath = os.path.join(pluginPath, 'vts_core')
 # existsPluginPath = QDir(libPath).exists()
 sys.path.append(pluginPath)
 sys.path.append(libPath)
@@ -53,8 +53,8 @@ sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
 
 # Import the code for the dialog
-from .gui import VolumeTimeSeriesDialog
-from .defs import defs_main
+from .vts_gui import VolumeTimeSeriesDialog
+from .vts_defs import defs_main
 from .QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 
 # # sys.path.append("C:\Program Files\JetBrains\PyCharm 2020.3\debug-eggs\pydevd-pycharm.egg") # dhl

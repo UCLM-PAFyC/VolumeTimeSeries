@@ -53,7 +53,7 @@ sys.path.append(os.path.join(current_path, '..'))
 # sys.path.insert(0, '..')
 
 # Import the code for the dialog
-from .vts_gui import VolumeTimeSeriesDialog
+from .vts_gui.VolumeTimeSeriesDialog import VolumeTimeSeriesDialog
 from .vts_defs import defs_main
 from .QGisIFaceVolumeTimeSeries import QGisIFaceVolumeTimeSeries
 

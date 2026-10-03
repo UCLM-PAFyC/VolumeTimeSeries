@@ -656,10 +656,15 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DSM + ".tif")
                     dsm_gdp_phgmp_file_path = os.path.join(output_path, dsm_gdp_phgmp_filename)
                     dsm_gdp_phgmp_file_path = os.path.normpath(dsm_gdp_phgmp_file_path)
+
                     dsm_fp_gdp_phgmp_aux_filename = (gdp_file_basename + '_' + phgmp_id + '_'
                                               + defs_ph_prjs_dlg.FIELD_DSM + "_aux.geojson")
                     dsm_fp_gdp_phgmp_aux_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_aux_filename)
                     dsm_fp_gdp_phgmp_aux_file_path = os.path.normpath(dsm_fp_gdp_phgmp_aux_file_path)
+                    dsm_fp_gdp_phgmp_aux_valid_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DSM + "_aux_valid.geojson")
+                    dsm_fp_gdp_phgmp_aux_valid_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_aux_valid_filename)
+                    dsm_fp_gdp_phgmp_aux_valid_file_path = os.path.normpath(dsm_fp_gdp_phgmp_aux_valid_file_path)
                     dsm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
                                               + defs_ph_prjs_dlg.FIELD_DSM + ".geojson")
                     dsm_fp_gdp_phgmp_file_path = os.path.join(output_path, dsm_fp_gdp_phgmp_filename)
@@ -698,14 +703,21 @@ class Project:
                                                                          dsm_fp_gdp_phgmp_aux_file_path))
                             dsm_commands.append(dsm_fp_1_command)
                             dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_aux_file_path)
-                            dsm_fp_2_command = ("ogr2ogr  \"{}\" \"{}\"".format(dsm_fp_gdp_phgmp_file_path,
+                            dsm_fp_2_command = ("ogr2ogr  -makevalid \"{}\" \"{}\"".format(dsm_fp_gdp_phgmp_aux_valid_file_path,
                                                                          dsm_fp_gdp_phgmp_aux_file_path))
-                            dsm_fp_2_command += (" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(gdp_gsd))
                             dsm_commands.append(dsm_fp_2_command)
-                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
-                            dsm_fp_3_command = ("del \"{}\" /Q".format(dsm_fp_gdp_phgmp_aux_file_path))
+                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_aux_valid_file_path)
+                            dsm_fp_3_command = ("ogr2ogr  \"{}\" \"{}\"".format(dsm_fp_gdp_phgmp_file_path,
+                                                                         dsm_fp_gdp_phgmp_aux_valid_file_path))
+                            dsm_fp_3_command += (" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(gdp_gsd))
                             dsm_commands.append(dsm_fp_3_command)
-                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path) # for equal indexes
+                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
+                            dsm_fp_4_command = ("del \"{}\" /Q".format(dsm_fp_gdp_phgmp_aux_file_path))
+                            dsm_commands.append(dsm_fp_4_command)
+                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
+                            dsm_fp_5_command = ("del \"{}\" /Q".format(dsm_fp_gdp_phgmp_aux_valid_file_path))
+                            dsm_commands.append(dsm_fp_5_command)
+                            dsm_commands_output_filepaths.append(dsm_fp_gdp_phgmp_file_path)
                             # dsm_fp_command = ("gdal raster footprint --split-multipolygons")
                             # dsm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
                             # dsm_fp_command += (" \"{}\" \"{}\"".format(dsm_gdp_phgmp_file_path, dsm_fp_gdp_phgmp_file_path))
@@ -834,6 +846,10 @@ class Project:
                                               + defs_ph_prjs_dlg.FIELD_DTM + "_aux.geojson")
                     dtm_fp_gdp_phgmp_aux_file_path = os.path.join(output_path, dtm_fp_gdp_phgmp_aux_filename)
                     dtm_fp_gdp_phgmp_aux_file_path = os.path.normpath(dtm_fp_gdp_phgmp_aux_file_path)
+                    dtm_fp_gdp_phgmp_aux_valid_filename = (gdp_file_basename + '_' + phgmp_id + '_'
+                                              + defs_ph_prjs_dlg.FIELD_DTM + "_aux_valid.geojson")
+                    dtm_fp_gdp_phgmp_aux_valid_file_path = os.path.join(output_path, dtm_fp_gdp_phgmp_aux_valid_filename)
+                    dtm_fp_gdp_phgmp_aux_valid_file_path = os.path.normpath(dtm_fp_gdp_phgmp_aux_valid_file_path)
                     dtm_fp_gdp_phgmp_filename = (gdp_file_basename + '_' + phgmp_id + '_'
                                               + defs_ph_prjs_dlg.FIELD_DTM + ".geojson")
                     dtm_fp_gdp_phgmp_file_path = os.path.join(output_path, dtm_fp_gdp_phgmp_filename)
@@ -874,14 +890,21 @@ class Project:
                                                                          dtm_fp_gdp_phgmp_aux_file_path))
                             dtm_commands.append(dtm_fp_1_command)
                             dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_aux_file_path)
-                            dtm_fp_2_command = ("ogr2ogr  \"{}\" \"{}\"".format(dtm_fp_gdp_phgmp_file_path,
+                            dtm_fp_2_command = ("ogr2ogr  -makevalid \"{}\" \"{}\"".format(dtm_fp_gdp_phgmp_aux_valid_file_path,
                                                                          dtm_fp_gdp_phgmp_aux_file_path))
-                            dtm_fp_2_command += (" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(gdp_gsd))
                             dtm_commands.append(dtm_fp_2_command)
-                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
-                            dtm_fp_3_command = ("del \"{}\" /Q".format(dtm_fp_gdp_phgmp_aux_file_path))
+                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_aux_valid_file_path)
+                            dtm_fp_3_command = ("ogr2ogr  \"{}\" \"{}\"".format(dtm_fp_gdp_phgmp_file_path,
+                                                                         dtm_fp_gdp_phgmp_aux_valid_file_path))
+                            dtm_fp_3_command += (" -simplify {:.3f} -dialect sqlite -sql \"SELECT ST_Union(geometry) FROM contour\"".format(gdp_gsd))
                             dtm_commands.append(dtm_fp_3_command)
-                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path) # for equal indexes
+                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
+                            dtm_fp_4_command = ("del \"{}\" /Q".format(dtm_fp_gdp_phgmp_aux_file_path))
+                            dtm_commands.append(dtm_fp_4_command)
+                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
+                            dtm_fp_5_command = ("del \"{}\" /Q".format(dtm_fp_gdp_phgmp_aux_valid_file_path))
+                            dtm_commands.append(dtm_fp_5_command)
+                            dtm_commands_output_filepaths.append(dtm_fp_gdp_phgmp_file_path)
                             # dtm_fp_command = ("gdal raster footprint --split-multipolygons")
                             # dtm_fp_command += (" --simplify-tolerance {:.3f}".format(gdp_gsd))
                             # dtm_fp_command += (" \"{}\" \"{}\"".format(dtm_gdp_phgmp_file_path, dtm_fp_gdp_phgmp_file_path))

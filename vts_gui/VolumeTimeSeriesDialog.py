@@ -106,6 +106,7 @@ class VolumeTimeSeriesDialog(QDialog):
         self.updateQGISPushButton.setEnabled(False)
         self.openProjectQgisPushButton.clicked.connect(self.open_qgis)
         self.closeProjectQgisPushButton.clicked.connect(self.close_qgis)
+        self.uploadDataForWebGISpushButton.clicked.connect(self.upload_data_for_webgis)
         return
 
     def open_qgis(self):
@@ -241,6 +242,18 @@ class VolumeTimeSeriesDialog(QDialog):
         # if str_error:
         #     str_error += ('Updating QGIS, error:\n{}'.format(str_error))
         #     error_msg(str_error)
+        return
+
+    def upload_data_for_webgis(self):
+        if not self.project:
+            str_error = ('Not exists project')
+            error_msg(str_error)
+            return False
+        str_error = self.project.upload_data_for_webgis(self)
+        if str_error:
+            str_error = ('Upload data for WebGIS, error:\n{}'.format(str_error))
+            error_msg(str_error)
+            return False
         return
 
     def volumes_computations(self):

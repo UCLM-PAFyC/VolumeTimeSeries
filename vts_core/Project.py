@@ -8,6 +8,7 @@ import os
 import subprocess
 import json
 import numpy as np
+import shutil
 
 from osgeo import gdal, osr, ogr
 
@@ -1782,6 +1783,132 @@ class Project:
                     return str_error
             volumes_computations[id] = vc_json_content
         self.volumes_computations = volumes_computations
+        return str_error
+
+    def upload_data_for_webgis(self, dialog):
+        str_error = ''
+        is_debug = True
+        if len(self.geometric_design_projects) == 0:
+            str_error = ('There are no geometric designs projects')
+            return str_error
+        project_path = os.path.dirname(os.path.abspath(self.file_path))
+        upload_path = project_path + '//' + defs_project.UPLOAD_FOLDER_FOR_QGIS
+        upload_path = os.path.normpath(upload_path)
+        if not os.path.exists(upload_path):
+            # if the demo_folder directory is not present
+            # then create it.
+            os.makedirs(upload_path)
+        if not os.path.exists(upload_path):
+            str_error = ('Error making path:\n{}'.format(upload_path))
+            return str_error
+        upload_path_is_empty = True
+        for _ in os.scandir(upload_path):
+            empty = False
+            break
+        if not is_debug and not upload_path_is_empty:
+            str_error = ('Upload data WebGIS folder is not empty:\n{}'.format(upload_path))
+            str_error += ('\nRename existing folder and try again')
+            return str_error
+        # project file
+        upload_project_file_path = upload_path + '//' + os.path.basename(self.file_path)
+        upload_project_file_path = os.path.normpath(upload_project_file_path)
+        shutil.copyfile(self.file_path, upload_project_file_path) # replace if exists
+        if not os.path.exists(upload_project_file_path):
+            str_error = ('Error copying project file:\n{}'.format(upload_path))
+            str_error += ("\nto Upload data WebGIS folder:\n{}".format(upload_project_file_path))
+            return str_error
+        file_paths_to_remove = []
+        # geojson_files and create gpkg
+        gpkg_path = upload_path + '//upload.gpkg'
+        gpkg_path = os.path.normpath(gpkg_path)
+        gpkg_initialized = False
+        nvc = -1
+        bat_files_to_process = []
+        geojson_processed_files = []
+        for vc_id in self.volumes_computations:
+            nvc = nvc + 1
+            vc = self.volumes_computations[vc_id]
+            # vc_id = vc[defs_vc.FIELD_GDP_ID]
+            vc_enabled = vc[defs_vc.FIELD_ENABLED]
+            vc_date_from = vc[defs_vc.FIELD_VOLUME_DATE_FROM]
+            vc_date_to = vc[defs_vc.FIELD_VOLUME_DATE_TO]
+            vc_volume_type = vc[defs_vc.FIELD_VOLUME_TYPE]
+            vc_crs_id = vc[defs_vc.FIELD_CRS]
+            vc_raster_file_result = vc[defs_vc.FIELD_RASTER_FILE_RESULT]
+            vc_raster_file_from = vc[defs_vc.FIELD_RASTER_FILE_FROM]
+            vc_raster_file_to = vc[defs_vc.FIELD_RASTER_FILE_TO]
+            # vc_description = vc[defs_vc.FIELD_DESCRIPTION]
+            vc_raster_file_result_geojson = vc[defs_vc.FIELD_RASTER_FILE_RESULT_GEOJSON]
+            vc_raster_file_from_geojson = vc[defs_vc.FIELD_RASTER_FILE_FROM_GEOJSON]
+            vc_raster_file_to_geojson = vc[defs_vc.FIELD_RASTER_FILE_TO_GEOJSON]
+            geojson_files = [vc_raster_file_from_geojson, vc_raster_file_to_geojson, vc_raster_file_result_geojson]
+            raster_files = [vc_raster_file_from, vc_raster_file_to, vc_raster_file_result]
+            if vc_enabled == 0:
+                continue
+            for i in range(len(geojson_files)):
+                geojson_file = geojson_files[i]
+                if geojson_file in geojson_processed_files:
+                    continue
+                bat_file_path = upload_path + ('//process_{}.bat'.format(len(bat_files_to_process) + 1))
+                bat_file_path = os.path.normpath(bat_file_path)
+                file_paths_to_remove.append(bat_file_path)
+                f_bat = open(bat_file_path, "w")
+                f_bat.write("REM @echo off\n")
+                f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                # windows
+                f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                f_bat.write("echo \"start\"\n")
+                if nvc == 0 and i == 0:
+                    # ogr2ogr -f GPKG D:\master_co2\tafalla\upload\upload.gpkg -nln gdp_1.geojson D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1.geojson
+                    f_bat.write("ogr2ogr -f GPKG \"{}\" -nln {} \"{}\"\n".format(gpkg_path,
+                                                                               os.path.basename(geojson_file),
+                                                                               geojson_file))
+                    f_bat.close()
+                    bat_files_to_process.append(bat_file_path)
+                    geojson_processed_files.append(geojson_file)
+                    continue
+                # ogr2ogr -update -f GPKG D:\master_co2\tafalla\upload\upload.gpkg -nln gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DTM_vol.geojson D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DTM_vol.geojson
+                f_bat.write("ogr2ogr -update -f GPKG  \"{}\" -nln {} \"{}\"\n".format(gpkg_path,
+                                                                                    os.path.basename(geojson_file),
+                                                                                    geojson_file))
+                bat_files_to_process.append(bat_file_path)
+                geojson_processed_files.append(geojson_file)
+                f_bat.write("echo \"end\"\n")
+                f_bat.close()
+
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Executing {} processes ... wait for finish'
+                                       .format(str(len(bat_files_to_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_files_to_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_files_to_process)):
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_files_to_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_files_to_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+        if not is_debug:
+            return
+        for i in range(len(file_paths_to_remove)):
+            if os.path.exists(file_paths_to_remove[i]):
+                os.remove(file_paths_to_remove[i])
         return str_error
 
     def volumes_computations_gui(self, parent_widget):

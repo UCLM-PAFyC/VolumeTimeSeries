@@ -2132,6 +2132,42 @@ class Project:
                     f_bat.close()
                     bat_pht_raster_dtm_process.append(bat_file_path)
                     processed_pht_raster_dtm_files.append(pht_dtm)
+            # orthomosaic
+            if pht_orthomosaic:
+                if os.path.exists(pht_orthomosaic) and not pht_orthomosaic in processed_pht_raster_ortho_files:
+                    orthomosaic_file_name = os.path.basename(pht_orthomosaic)
+                    orthomosaic_file_name_parts = os.path.splitext(orthomosaic_file_name)
+                    orthomosaic_file_name_without_extension = orthomosaic_file_name_parts[0]
+                    orthomosaic_aux_file_path = upload_path + "//" + "orthomosaic_aux.tif"
+                    orthomosaic_aux_file_path = os.path.normpath(orthomosaic_aux_file_path)
+                    orthomosaic_aux_compress_file_path = upload_path + "//" + "orthomosaic_aux_compress.tif"
+                    orthomosaic_aux_compress_file_path = os.path.normpath(orthomosaic_aux_compress_file_path)
+                    bat_file_path = upload_path + (
+                        '//process_pht_orthomosaic_{}.bat'.format(len(bat_pht_raster_ortho_process) + 1))
+                    bat_file_path = os.path.normpath(bat_file_path)
+                    file_paths_to_remove.append(bat_file_path)
+                    f_bat = open(bat_file_path, "w")
+                    f_bat.write("REM @echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                    f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    f_bat.write("echo \"start\"\n")
+                    # gdal_translate -ot Float32 D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm.tif D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif
+                    # gdal_translate -of GPKG D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES -co RASTER_TABLE=2017_PNOA_LIDAR_DSM_20cm
+                    f_bat.write("gdal_translate -a_nodata 255 \"{}\" \"{}\"\n".format(pht_orthomosaic, orthomosaic_aux_file_path))
+                    f_bat.write("gdal_translate -co \"COMPRESS=LZW\" \"{}\" \"{}\"\n"
+                                .format(orthomosaic_aux_file_path, orthomosaic_aux_compress_file_path))
+                    f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES -co RASTER_TABLE={}\n"
+                                .format(orthomosaic_aux_compress_file_path, gpkg_path, orthomosaic_file_name_without_extension))
+                    f_bat.write("del \"{}\" /F /Q\n".format(orthomosaic_aux_file_path))
+                    f_bat.write("del \"{}\" /F /Q\n".format(orthomosaic_aux_compress_file_path))
+                    f_bat.close()
+                    bat_pht_raster_ortho_process.append(bat_file_path)
+                    processed_pht_raster_ortho_files.append(pht_orthomosaic)
             # dsm
             if pht_dsm:
                 if os.path.exists(pht_dsm) and not pht_dsm in processed_pht_raster_dsm_files:
@@ -2169,6 +2205,33 @@ class Project:
                     bat_pht_raster_dsm_process.append(bat_file_path)
                     processed_pht_raster_dsm_files.append(pht_dsm)
 
+        # pht orthomosaic
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} photogrammetry Orthomosaic files ... wait for finish'
+                                       .format(str(len(bat_pht_raster_ortho_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_pht_raster_ortho_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_pht_raster_ortho_process)):
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_pht_raster_ortho_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_pht_raster_ortho_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
         # pht dtm
         dialog.processInformationGroupBox.setEnabled(True)
         dialog.processLineEdit.clear()

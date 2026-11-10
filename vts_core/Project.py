@@ -1823,8 +1823,14 @@ class Project:
         gpkg_path = os.path.normpath(gpkg_path)
         gpkg_initialized = False
         nvc = -1
-        bat_files_to_process = []
-        geojson_processed_files = []
+        bat_geojson_files_to_process = []
+        processed_geojson_files = []
+        bat_raster_from_files_to_process = []
+        processed_raster_from_files = []
+        bat_raster_to_files_to_process = []
+        processed_raster_to_files = []
+        bat_raster_result_files_to_process = []
+        processed_raster_result_files = []
         for vc_id in self.volumes_computations:
             nvc = nvc + 1
             vc = self.volumes_computations[vc_id]
@@ -1846,10 +1852,10 @@ class Project:
             if vc_enabled == 0:
                 continue
             for i in range(len(geojson_files)):
-                geojson_file = geojson_files[i]
-                if geojson_file in geojson_processed_files:
+                geojson_file_path = geojson_files[i]
+                if geojson_file_path in processed_geojson_files:
                     continue
-                bat_file_path = upload_path + ('//process_{}.bat'.format(len(bat_files_to_process) + 1))
+                bat_file_path = upload_path + ('//process_geojson_{}.bat'.format(len(bat_geojson_files_to_process) + 1))
                 bat_file_path = os.path.normpath(bat_file_path)
                 file_paths_to_remove.append(bat_file_path)
                 f_bat = open(bat_file_path, "w")
@@ -1865,46 +1871,360 @@ class Project:
                 if nvc == 0 and i == 0:
                     # ogr2ogr -f GPKG D:\master_co2\tafalla\upload\upload.gpkg -nln gdp_1.geojson D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1.geojson
                     f_bat.write("ogr2ogr -f GPKG \"{}\" -nln {} \"{}\"\n".format(gpkg_path,
-                                                                               os.path.basename(geojson_file),
-                                                                               geojson_file))
+                                                                               os.path.basename(geojson_file_path),
+                                                                               geojson_file_path))
                     f_bat.close()
-                    bat_files_to_process.append(bat_file_path)
-                    geojson_processed_files.append(geojson_file)
+                    bat_geojson_files_to_process.append(bat_file_path)
+                    processed_geojson_files.append(geojson_file_path)
                     continue
                 # ogr2ogr -update -f GPKG D:\master_co2\tafalla\upload\upload.gpkg -nln gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DTM_vol.geojson D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DTM_vol.geojson
                 f_bat.write("ogr2ogr -update -f GPKG  \"{}\" -nln {} \"{}\"\n".format(gpkg_path,
-                                                                                    os.path.basename(geojson_file),
-                                                                                    geojson_file))
-                bat_files_to_process.append(bat_file_path)
-                geojson_processed_files.append(geojson_file)
+                                                                                    os.path.basename(geojson_file_path),
+                                                                                    geojson_file_path))
+                bat_geojson_files_to_process.append(bat_file_path)
+                processed_geojson_files.append(geojson_file_path)
                 f_bat.write("echo \"end\"\n")
                 f_bat.close()
+            if not vc_raster_file_from in processed_raster_from_files:
+                # gdal_translate -of GPKG D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DSM_vol.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES
+                raster_file_path = vc_raster_file_from
+                bat_file_path = upload_path + (
+                    '//process_raster_from_{}.bat'.format(len(bat_raster_from_files_to_process) + 1))
+                bat_file_path = os.path.normpath(bat_file_path)
+                file_paths_to_remove.append(bat_file_path)
+                f_bat = open(bat_file_path, "w")
+                f_bat.write("REM @echo off\n")
+                f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                # windows
+                f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                f_bat.write("echo \"start\"\n")
+                f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES\n"
+                            .format(raster_file_path, gpkg_path))
+                f_bat.close()
+                bat_raster_from_files_to_process.append(bat_file_path)
+                processed_raster_from_files.append(vc_raster_file_from)
+            if not vc_raster_file_to in processed_raster_to_files:
+                # gdal_translate -of GPKG D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DSM_vol.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES
+                raster_file_path = vc_raster_file_to
+                bat_file_path = upload_path + (
+                    '//process_raster_to_{}.bat'.format(len(bat_raster_to_files_to_process) + 1))
+                bat_file_path = os.path.normpath(bat_file_path)
+                file_paths_to_remove.append(bat_file_path)
+                f_bat = open(bat_file_path, "w")
+                f_bat.write("REM @echo off\n")
+                f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                # windows
+                f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                f_bat.write("echo \"start\"\n")
+                f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES\n"
+                            .format(raster_file_path, gpkg_path))
+                f_bat.close()
+                bat_raster_to_files_to_process.append(bat_file_path)
+                processed_raster_to_files.append(vc_raster_file_to)
+            if not vc_raster_file_result in processed_raster_result_files:
+                # gdal_translate -of GPKG D:\master_co2\tafalla\qVolumeTimeSeriesProjects\output\gdp_1_2017_PNOA_LIDAR_2024_PNOA_LIDAR_DSM_vol.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES
+                raster_file_path = vc_raster_file_result
+                bat_file_path = upload_path + (
+                    '//process_raster_result_{}.bat'.format(len(bat_raster_result_files_to_process) + 1))
+                bat_file_path = os.path.normpath(bat_file_path)
+                file_paths_to_remove.append(bat_file_path)
+                f_bat = open(bat_file_path, "w")
+                f_bat.write("REM @echo off\n")
+                f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                # windows
+                f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                f_bat.write("echo \"start\"\n")
+                f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES\n"
+                            .format(raster_file_path, gpkg_path))
+                f_bat.close()
+                bat_raster_result_files_to_process.append(bat_file_path)
+                processed_raster_result_files.append(vc_raster_file_to)
 
+        # geojson
         dialog.processInformationGroupBox.setEnabled(True)
         dialog.processLineEdit.clear()
         dialog.processProgressBar.reset()
-        dialog.processLineEdit.setText('Executing {} processes ... wait for finish'
-                                       .format(str(len(bat_files_to_process))))
+        dialog.processLineEdit.setText('Processing {} geojson files ... wait for finish'
+                                       .format(str(len(bat_geojson_files_to_process))))
         dialog.processLineEdit.adjustSize()
-        dialog.processProgressBar.setMaximum(len(bat_files_to_process))
+        dialog.processProgressBar.setMaximum(len(bat_geojson_files_to_process))
         dialog.processLineEdit.adjustSize()
         QApplication.processEvents()
-        for i in range(len(bat_files_to_process)):
+        for i in range(len(bat_geojson_files_to_process)):
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
-            command = bat_files_to_process[i]
+            command = bat_geojson_files_to_process[i]
             result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
             # os.system(command)
             # # if not os.path.exists(gdp_raster_qgis_filepath):
             # if not os.path.exists(gpkg_path):
             #     str_error += ("\nSomething fails executing:\n{}".format(command))
             #     return str_error
-        dialog.processProgressBar.setValue(len(bat_files_to_process))
+        dialog.processProgressBar.setValue(len(bat_geojson_files_to_process))
         dialog.processInformationGroupBox.setEnabled(False)
         dialog.processLineEdit.clear()
         dialog.processProgressBar.reset()
         QApplication.processEvents()
-        if not is_debug:
+
+        # raster_from
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} raster from files ... wait for finish'
+                                       .format(str(len(bat_raster_from_files_to_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_raster_from_files_to_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_raster_from_files_to_process)):
+            if is_debug: # only first
+                break
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_raster_from_files_to_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_raster_from_files_to_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+
+        # raster_to
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} raster to files ... wait for finish'
+                                       .format(str(len(bat_raster_to_files_to_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_raster_to_files_to_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_raster_to_files_to_process)):
+            if is_debug: # only first
+                break
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_raster_to_files_to_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_raster_to_files_to_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+
+        # raster_result
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} raster resutl files ... wait for finish'
+                                       .format(str(len(bat_raster_result_files_to_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_raster_result_files_to_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_raster_result_files_to_process)):
+            if is_debug: # only first
+                break
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_raster_result_files_to_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_raster_result_files_to_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+
+        bat_pht_raster_dsm_process = []
+        processed_pht_raster_dsm_files = []
+        bat_pht_raster_dtm_process = []
+        processed_pht_raster_dtm_files = []
+        bat_pht_raster_ortho_process = []
+        processed_pht_raster_ortho_files = []
+        npht = -1
+        for pht_id in self.photogrammetry_projects:
+            npht = npht + 1
+            pht = self.photogrammetry_projects[pht_id]
+            # pht_id = pht[defs_ph_prjs_dlg.FIELD_ID]
+            pht_date = pht[defs_ph_prjs_dlg.FIELD_DATE]
+            pht_enabled = pht[defs_ph_prjs_dlg.FIELD_ENABLED]
+            pht_crs_id = pht[defs_ph_prjs_dlg.FIELD_CRS]
+            pht_description = pht[defs_ph_prjs_dlg.FIELD_DESCRIPTION]
+            pht_file_path = pht[defs_ph_prjs_dlg.FIELD_FILE]
+            pht_orthomosaic = pht[defs_ph_prjs_dlg.FIELD_ORTHOMOSAIC]
+            pht_orthomosaic_crs_id = pht[defs_ph_prjs_dlg.FIELD_ORTHOMOSAIC_CRS]
+            pht_dsm = pht[defs_ph_prjs_dlg.FIELD_DSM]
+            pht_dsm_crs_id = pht[defs_ph_prjs_dlg.FIELD_DSM_CRS]
+            pht_dtm = pht[defs_ph_prjs_dlg.FIELD_DTM]
+            pht_dtm_crs_id = pht[defs_ph_prjs_dlg.FIELD_DTM_CRS]
+            pht_pc = pht[defs_ph_prjs_dlg.FIELD_POINT_CLOUD]
+            pht_pc_crs_id = pht[defs_ph_prjs_dlg.FIELD_POINT_CLOUD_CRS]
+            if pht_enabled == 0:
+                continue
+            # dtm
+            if pht_dtm:
+                if os.path.exists(pht_dtm) and not pht_dtm in processed_pht_raster_dtm_files:
+                    dtm_file_name = os.path.basename(pht_dtm)
+                    dtm_file_name_parts = os.path.splitext(dtm_file_name)
+                    dtm_file_name_without_extension = dtm_file_name_parts[0]
+                    dtm_aux_file_path = upload_path + "//" + "dtm_aux.tif"
+                    dtm_aux_file_path = os.path.normpath(dtm_aux_file_path)
+                    dtm_aux_compress_file_path = upload_path + "//" + "dtm_aux_compress.tif"
+                    dtm_aux_compress_file_path = os.path.normpath(dtm_aux_compress_file_path)
+                    bat_file_path = upload_path + (
+                        '//process_pht_dtm_{}.bat'.format(len(bat_pht_raster_dtm_process) + 1))
+                    bat_file_path = os.path.normpath(bat_file_path)
+                    file_paths_to_remove.append(bat_file_path)
+                    f_bat = open(bat_file_path, "w")
+                    f_bat.write("REM @echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                    f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    f_bat.write("echo \"start\"\n")
+                    # gdal_translate -ot Float32 D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm.tif D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif
+                    # gdal_translate -of GPKG D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES -co RASTER_TABLE=2017_PNOA_LIDAR_DSM_20cm
+                    f_bat.write("gdal_translate -ot Float32 \"{}\" \"{}\"\n".format(pht_dtm, dtm_aux_file_path))
+                    f_bat.write("gdal_translate -co \"COMPRESS=LZW\" \"{}\" \"{}\"\n"
+                                .format(dtm_aux_file_path, dtm_aux_compress_file_path))
+                    f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES -co RASTER_TABLE={}\n"
+                                .format(dtm_aux_compress_file_path, gpkg_path, dtm_file_name_without_extension))
+                    f_bat.write("del \"{}\" /F /Q\n".format(dtm_aux_file_path))
+                    f_bat.write("del \"{}\" /F /Q\n".format(dtm_aux_compress_file_path))
+                    f_bat.close()
+                    bat_pht_raster_dtm_process.append(bat_file_path)
+                    processed_pht_raster_dtm_files.append(pht_dtm)
+            # dsm
+            if pht_dsm:
+                if os.path.exists(pht_dsm) and not pht_dsm in processed_pht_raster_dsm_files:
+                    dsm_file_name = os.path.basename(pht_dsm)
+                    dsm_file_name_parts = os.path.splitext(dsm_file_name)
+                    dsm_file_name_without_extension = dsm_file_name_parts[0]
+                    dsm_aux_file_path = upload_path + "//" + "dsm_aux.tif"
+                    dsm_aux_file_path = os.path.normpath(dsm_aux_file_path)
+                    dsm_aux_compress_file_path = upload_path + "//" + "dsm_aux_compress.tif"
+                    dsm_aux_compress_file_path = os.path.normpath(dsm_aux_compress_file_path)
+                    bat_file_path = upload_path + (
+                        '//process_pht_dsm_{}.bat'.format(len(bat_pht_raster_dsm_process) + 1))
+                    bat_file_path = os.path.normpath(bat_file_path)
+                    file_paths_to_remove.append(bat_file_path)
+                    f_bat = open(bat_file_path, "w")
+                    f_bat.write("REM @echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                    f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    f_bat.write("echo \"start\"\n")
+                    # gdal_translate -ot Float32 D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm.tif D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif
+                    # gdal_translate -of GPKG D:\master_co2\tafalla\2017_PNOA_LIDAR\2017_PNOA_LIDAR_DSM_20cm_float32.tif D:\master_co2\tafalla\upload\upload.gpkg -co APPEND_SUBDATASET=YES -co RASTER_TABLE=2017_PNOA_LIDAR_DSM_20cm
+                    f_bat.write("gdal_translate -ot Float32 \"{}\" \"{}\"\n".format(pht_dsm, dsm_aux_file_path))
+                    f_bat.write("gdal_translate -co \"COMPRESS=LZW\" \"{}\" \"{}\"\n"
+                                .format(dsm_aux_file_path, dsm_aux_compress_file_path))
+                    f_bat.write("gdal_translate -of GPKG \"{}\" \"{}\" -co APPEND_SUBDATASET=YES -co RASTER_TABLE={}\n"
+                                .format(dsm_aux_compress_file_path, gpkg_path, dsm_file_name_without_extension))
+                    f_bat.write("del \"{}\" /F /Q\n".format(dsm_aux_file_path))
+                    f_bat.write("del \"{}\" /F /Q\n".format(dsm_aux_compress_file_path))
+                    f_bat.close()
+                    bat_pht_raster_dsm_process.append(bat_file_path)
+                    processed_pht_raster_dsm_files.append(pht_dsm)
+
+        # pht dtm
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} photogrammetry DTM files ... wait for finish'
+                                       .format(str(len(bat_pht_raster_dtm_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_pht_raster_dtm_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_pht_raster_dtm_process)):
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_pht_raster_dtm_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_pht_raster_dtm_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+        # pht dsm
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} photogrammetry DSM files ... wait for finish'
+                                       .format(str(len(bat_pht_raster_dsm_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_pht_raster_dsm_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_pht_raster_dsm_process)):
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_pht_raster_dsm_process[i]
+            result = subprocess.run([command], capture_output=True, text=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_pht_raster_dsm_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
+
+        if is_debug:
             return
         for i in range(len(file_paths_to_remove)):
             if os.path.exists(file_paths_to_remove[i]):

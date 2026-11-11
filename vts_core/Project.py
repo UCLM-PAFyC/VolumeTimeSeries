@@ -9,6 +9,7 @@ import subprocess
 import json
 import numpy as np
 import shutil
+from datetime import datetime, timedelta
 
 from osgeo import gdal, osr, ogr
 
@@ -1787,10 +1788,11 @@ class Project:
 
     def upload_data_for_webgis(self, dialog):
         str_error = ''
+        processing_time = None
         is_debug = True
         if len(self.geometric_design_projects) == 0:
             str_error = ('There are no geometric designs projects')
-            return str_error
+            return str_error, processing_time
         project_path = os.path.dirname(os.path.abspath(self.file_path))
         upload_path = project_path + '//' + defs_project.UPLOAD_FOLDER_FOR_QGIS
         upload_path = os.path.normpath(upload_path)
@@ -1800,7 +1802,7 @@ class Project:
             os.makedirs(upload_path)
         if not os.path.exists(upload_path):
             str_error = ('Error making path:\n{}'.format(upload_path))
-            return str_error
+            return str_error, processing_time
         upload_path_is_empty = True
         for _ in os.scandir(upload_path):
             empty = False
@@ -1808,7 +1810,7 @@ class Project:
         if not is_debug and not upload_path_is_empty:
             str_error = ('Upload data WebGIS folder is not empty:\n{}'.format(upload_path))
             str_error += ('\nRename existing folder and try again')
-            return str_error
+            return str_error, processing_time
         # project file
         upload_project_file_path = upload_path + '//' + os.path.basename(self.file_path)
         upload_project_file_path = os.path.normpath(upload_project_file_path)
@@ -1816,7 +1818,8 @@ class Project:
         if not os.path.exists(upload_project_file_path):
             str_error = ('Error copying project file:\n{}'.format(upload_path))
             str_error += ("\nto Upload data WebGIS folder:\n{}".format(upload_project_file_path))
-            return str_error
+            return str_error, processing_time
+        start_date_time = datetime.now()
         file_paths_to_remove = []
         # geojson_files and create gpkg
         gpkg_path = upload_path + '//upload.gpkg'
@@ -1966,7 +1969,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_geojson_files_to_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -1996,7 +1999,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_raster_from_files_to_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -2056,7 +2059,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_raster_result_files_to_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -2076,6 +2079,8 @@ class Project:
         processed_pht_raster_dtm_files = []
         bat_pht_raster_ortho_process = []
         processed_pht_raster_ortho_files = []
+        bat_pht_pc_process = []
+        processed_pht_pc_files = []
         npht = -1
         for pht_id in self.photogrammetry_projects:
             npht = npht + 1
@@ -2096,6 +2101,34 @@ class Project:
             pht_pc_crs_id = pht[defs_ph_prjs_dlg.FIELD_POINT_CLOUD_CRS]
             if pht_enabled == 0:
                 continue
+            # pc
+            if pht_pc:
+                if os.path.exists(pht_pc) and not pht_pc in processed_pht_pc_files:
+                    pc_file_name = os.path.basename(pht_pc)
+                    pc_file_name_parts = os.path.splitext(pc_file_name)
+                    pc_file_name_without_extension = pc_file_name_parts[0]
+                    pc_file_path = upload_path + "//" + pc_file_name_without_extension + ".laz"
+                    pc_file_path = os.path.normpath(pc_file_path)
+                    bat_file_path = upload_path + (
+                        '//process_pht_pc_{}.bat'.format(len(bat_pht_pc_process) + 1))
+                    bat_file_path = os.path.normpath(bat_file_path)
+                    file_paths_to_remove.append(bat_file_path)
+                    f_bat = open(bat_file_path, "w")
+                    f_bat.write("REM @echo off\n")
+                    f_bat.write("set OSGEO4W_ROOT={}\n".format(self.qgis_prefix_path))
+                    # f_bat.write("set OSGEO4W_ROOT=C:/Program Files/QGIS 3.40.10\n")
+                    # windows
+                    f_bat.write("call \"{}\"\n".format(self.osge4w_bat_path))
+                    f_bat.write("set PROCESS_PATH={}\n".format(upload_path))
+                    f_bat.write("set PYTHONPATH={};%PYTHONPATH%\n".format(self.qgis_python_path))
+                    f_bat.write("set PATH={};{};%PATH%\n".format(self.osge4w_bin_path, self.qgis_bin_path))
+                    f_bat.write("echo \"start\"\n")
+                    # pdal translate -i %i -o %~ni.copc.laz --writers.copc.a_srs="EPSG:25830+5782"
+                    f_bat.write("pdal translate -i \"{}\" -o \"{}\" --writers.las.a_srs=\"{}\"\n"
+                                .format(pht_pc, pc_file_path, pht_pc_crs_id))
+                    f_bat.close()
+                    bat_pht_pc_process.append(bat_file_path)
+                    processed_pht_pc_files.append(pht_dtm)
             # dtm
             if pht_dtm:
                 if os.path.exists(pht_dtm) and not pht_dtm in processed_pht_raster_dtm_files:
@@ -2205,6 +2238,33 @@ class Project:
                     bat_pht_raster_dsm_process.append(bat_file_path)
                     processed_pht_raster_dsm_files.append(pht_dsm)
 
+        # pht pc
+        dialog.processInformationGroupBox.setEnabled(True)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        dialog.processLineEdit.setText('Processing {} photogrammetry Point Cloud files ... wait for finish'
+                                       .format(str(len(bat_pht_pc_process))))
+        dialog.processLineEdit.adjustSize()
+        dialog.processProgressBar.setMaximum(len(bat_pht_pc_process))
+        dialog.processLineEdit.adjustSize()
+        QApplication.processEvents()
+        for i in range(len(bat_pht_pc_process)):
+            dialog.processProgressBar.setValue(i)
+            QApplication.processEvents()
+            command = bat_pht_pc_process[i]
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
+            if is_debug and i == 0: # only first
+                break
+            # os.system(command)
+            # # if not os.path.exists(gdp_raster_qgis_filepath):
+            # if not os.path.exists(gpkg_path):
+            #     str_error += ("\nSomething fails executing:\n{}".format(command))
+            #     return str_error
+        dialog.processProgressBar.setValue(len(bat_pht_pc_process))
+        dialog.processInformationGroupBox.setEnabled(False)
+        dialog.processLineEdit.clear()
+        dialog.processProgressBar.reset()
+        QApplication.processEvents()
         # pht orthomosaic
         dialog.processInformationGroupBox.setEnabled(True)
         dialog.processLineEdit.clear()
@@ -2219,7 +2279,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_pht_raster_ortho_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -2246,7 +2306,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_pht_raster_dtm_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -2273,7 +2333,7 @@ class Project:
             dialog.processProgressBar.setValue(i)
             QApplication.processEvents()
             command = bat_pht_raster_dsm_process[i]
-            result = subprocess.run([command], capture_output=True, text=True)
+            result = subprocess.run([command], capture_output=True, text=True, shell=True)
             if is_debug and i == 0: # only first
                 break
             # os.system(command)
@@ -2287,12 +2347,16 @@ class Project:
         dialog.processProgressBar.reset()
         QApplication.processEvents()
 
-        if is_debug:
-            return
+        end_date_time = datetime.now()
+        process_time_in_seconds = end_date_time.timestamp() - start_date_time.timestamp()
+        processing_time = timedelta(seconds=process_time_in_seconds)
+
+        # if is_debug:
+        #     return str_error, processing_time
         for i in range(len(file_paths_to_remove)):
             if os.path.exists(file_paths_to_remove[i]):
                 os.remove(file_paths_to_remove[i])
-        return str_error
+        return str_error, processing_time
 
     def volumes_computations_gui(self, parent_widget):
         str_error = ''

@@ -249,11 +249,13 @@ class VolumeTimeSeriesDialog(QDialog):
             str_error = ('Not exists project')
             error_msg(str_error)
             return False
-        str_error = self.project.upload_data_for_webgis(self)
+        str_error, processing_time = self.project.upload_data_for_webgis(self)
         if str_error:
             str_error = ('Upload data for WebGIS, error:\n{}'.format(str_error))
             error_msg(str_error)
             return False
+        str_msg = ("Upload data for WebGIS completed.\nProcessing time: {}".format(processing_time))
+        info_msg(str_msg)
         return
 
     def volumes_computations(self):

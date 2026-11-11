@@ -41,3 +41,28 @@ Current functionalities:
 To do ...
 - Create a user manual
 
+Install libraries:
+OSGeo4W console:
+- pyLibQtTools
+cd E:\dev\python\lib\pyLibQtTools
+pip install -e E:\dev\python\lib\pyLibQtTools
+- pyLibCRSs
+cd E:\dev\python\lib\pyLibCRSs
+pip install -e E:\dev\python\lib\pyLibCRSs
+- pyLibGDAL
+cd E:\dev\python\lib\pyLibGDAL
+pip install -e E:\dev\python\lib\pyLibGDAL
+- pyLibProcesses
+cd E:\dev\python\lib\pyLibProcesses
+pip install -e E:\dev\python\lib\pyLibProcesses
+- pyLibProject
+cd E:\dev\python\lib\pyLibProject
+pip install -e E:\dev\python\lib\pyLibProject
+- pyLibQGIS
+cd E:\dev\python\lib\pyLibQGIS
+pip install -e E:\dev\python\lib\pyLibQGIS
+- pyLibParameters
+cd E:\dev\python\lib\pyLibParameters
+pip install -e E:\dev\python\lib\pyLibParameters
+
+
